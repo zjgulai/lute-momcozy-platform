@@ -36,6 +36,8 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_ROOT: ${{ secrets.DEPLOY_ROOT }}
     steps:
       - uses: actions/checkout@v4
       - name: Download build artifact
@@ -49,8 +51,9 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: DEPLOY_ROOT
           script: |
-            mkdir -p /opt/momcozy-platform/html
+            mkdir -p "${DEPLOY_ROOT}/html"
             mkdir -p /opt/ai-video/deploy/lighthouse
       - name: Upload nginx config
         uses: appleboy/scp-action@v0.1.7
@@ -68,7 +71,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: "out/"
-          target: "/opt/momcozy-platform/html-new"
+          target: "/tmp/momcozy-platform-new"
           strip_components: 1
       - name: Atomic swap and reload nginx
         uses: appleboy/ssh-action@v1.0.0
@@ -76,9 +79,14 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: DEPLOY_ROOT
           script: |
-            mv /opt/momcozy-platform/html /opt/momcozy-platform/html-old 2>/dev/null || true
-            mv /opt/momcozy-platform/html-new /opt/momcozy-platform/html
-            rm -rf /opt/momcozy-platform/html-old
-            docker exec ai_video_nginx nginx -t 2>&1 && docker exec ai_video_nginx nginx -s reload || echo "nginx reload skipped - test failed"
-            echo "Deploy complete: $(date)"
+            LIVE="${DEPLOY_ROOT}/html"
+            BACKUP="${DEPLOY_ROOT}/platform-backup-$(date +%Y%m%d%H%M%S)"
+            mkdir -p "${BACKUP}"
+            cp -a "${LIVE}/." "${BACKUP}/" 2>/dev/null || true
+            rsync -a --delete /tmp/momcozy-platform-new/ "${LIVE}/"
+            rm -rf /tmp/momcozy-platform-new
+            docker exec ai_video_nginx nginx -t 2>&1 && docker exec ai_video_nginx nginx -s reload || echo "nginx reload skipped"
+            find "${DEPLOY_ROOT}" -maxdepth 1 -name "platform-backup-*" -type d | sort | head -n -3 | xargs rm -rf
+            echo "Deploy complete: $(date) -> ${LIVE}"
