@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# data — populated at build time from lute-momcozy-audit, not committed
+/src/data/

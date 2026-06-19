@@ -1,10 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-const DATA_ROOT = path.resolve(
-  process.cwd(),
-  "../lute-momcozy-audit/src/_data"
-);
+const DATA_ROOT = path.resolve(process.cwd(), "src/data");
 
 function readJson<T>(filePath: string): T | null {
   try {

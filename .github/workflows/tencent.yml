@@ -17,6 +17,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout data source (lute-momcozy-audit)
+        uses: actions/checkout@v4
+        with:
+          repository: zjgulai/lute-momcozy-audit
+          path: lute-momcozy-audit
+      - name: Copy data into platform src/data
+        run: |
+          mkdir -p src/data
+          cp -r lute-momcozy-audit/src/_data/. src/data/
+          echo "Data files copied:"
+          ls src/data/
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -73,14 +84,11 @@ jobs:
           LIVE="${ROOT}/html"
           TMP="/tmp/platform-stage-$$"
           BACKUP="${ROOT}/platform-backup-$(date +%Y%m%d%H%M%S)"
-          echo ">>> LIVE=${LIVE}"
           mkdir -p "$TMP"
           tar -xzf /tmp/platform-out.tar.gz -C "$TMP"
-          echo ">>> tar done, files: $(ls $TMP | head -5)"
           mkdir -p "$BACKUP"
           cp -a "${LIVE}/." "${BACKUP}/" 2>/dev/null || true
           rsync -a --delete "${TMP}/" "${LIVE}/"
-          echo ">>> rsync done, live index: $(ls ${LIVE}/brands 2>/dev/null || echo 'no brands dir')"
           rm -rf "$TMP" /tmp/platform-out.tar.gz
           find "${ROOT}" -maxdepth 1 -name "platform-backup-*" -type d | sort | head -n -3 | xargs rm -rf 2>/dev/null || true
           docker exec ai_video_nginx nginx -t 2>&1 && docker exec ai_video_nginx nginx -s reload || echo "nginx reload skipped"
