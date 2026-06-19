@@ -38,6 +38,8 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
   const dn = data?.diagnosticNarrative ?? {};
   const p3 = (dn.problems ?? []).find((p: any) => p.id === "P3");
   const p5 = (dn.problems ?? []).find((p: any) => p.id === "P5");
+  const fe = data?.financialEvidence ?? {};
+  const feMonthly = (fe.monthlyTrend ?? []) as any[];
   const dict = data?.metricDictionary ?? {};
   const dictCategories = (dict.categories ?? []) as any[];
 
@@ -176,6 +178,50 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {feMonthly.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            财务 P&L 趋势 · {fe.window} · 实际 Shopify 数据（{fe.dataRows?.toLocaleString()} 条明细）
+          </h2>
+          <div className="border border-neutral-200 rounded-xl overflow-hidden mb-3">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-neutral-50 border-b border-neutral-200">
+                  <th className="px-3 py-2 text-left font-semibold text-neutral-500">月份</th>
+                  <th className="px-3 py-2 text-right font-semibold text-neutral-500">销售额</th>
+                  <th className="px-3 py-2 text-right font-semibold text-neutral-500">净利率</th>
+                  <th className="px-3 py-2 text-right font-semibold text-neutral-500">广告率</th>
+                  <th className="px-3 py-2 text-left font-semibold text-neutral-500">关键信号</th>
+                </tr>
+              </thead>
+              <tbody>
+                {feMonthly.map((m: any, i: number) => {
+                  const isProfit = m.netMarginRate > 0;
+                  const isHighAd = m.adRate > 130;
+                  return (
+                    <tr key={i} className={`border-b border-neutral-100 ${!isProfit ? "bg-red-50" : i === 2 ? "bg-green-50" : ""}`}>
+                      <td className="px-3 py-2 font-mono font-semibold">{m.month}</td>
+                      <td className="px-3 py-2 text-right font-mono">${(m.salesUsd/1000000).toFixed(1)}M</td>
+                      <td className={`px-3 py-2 text-right font-bold ${isProfit ? "text-green-700" : "text-danger-600"}`}>
+                        {m.netMarginRate > 0 ? "+" : ""}{m.netMarginRate}%
+                      </td>
+                      <td className={`px-3 py-2 text-right font-mono ${isHighAd ? "text-danger-500 font-semibold" : "text-neutral-700"}`}>
+                        {m.adRate}%
+                      </td>
+                      <td className="px-3 py-2 text-neutral-500">{m.note}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="text-xs text-neutral-500 bg-neutral-50 rounded-lg px-3 py-2">
+            ⚡ <strong>关键规律</strong>：广告率从 145% 降至 103%（2月），净利率从 -46% 跳至 +86%。
+            <strong>广告率每降 10pp ≈ 净利率提升 25pp</strong>，是当前最直接的利润杠杆。
           </div>
         </section>
       )}

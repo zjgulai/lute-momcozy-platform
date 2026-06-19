@@ -30,6 +30,10 @@ export default async function OverviewPage({
   const ext = data?.external ?? {};
   const ops = data?.currentOperations ?? {};
 
+  const fe = data?.financialEvidence ?? {};
+  const fs = fe.summary ?? {};
+  const fa = fe.financialArguments ?? {};
+
   const fmtUsd = (v: number | undefined | null) =>
     v != null ? `$${v.toLocaleString()}` : null;
 
@@ -62,6 +66,63 @@ export default async function OverviewPage({
           </div>
         </div>
       </div>
+
+      {fs.totalSalesUsd && (
+        <section className="mb-10">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide">
+              财务实证基线 · {fe.window} · {fe.dataRows?.toLocaleString()} 条 SKU 明细
+            </h2>
+            <span className="text-xs text-neutral-400">{fe.caveat?.slice(0, 30)}…</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div className="card-compact text-center">
+              <div className="text-2xl font-bold text-neutral-900">{fs.totalSalesUsdFormatted}</div>
+              <div className="text-xs text-neutral-500 mt-1">7个月总销售额</div>
+            </div>
+            <div className="card-compact text-center">
+              <div className="text-2xl font-bold text-green-600">{fs.netMarginRate}%</div>
+              <div className="text-xs text-neutral-500 mt-1">净利率（含折扣方法论）</div>
+            </div>
+            <div className="card-compact text-center">
+              <div className="text-2xl font-bold text-danger-600">{fs.adToSalesRate}%</div>
+              <div className="text-xs text-neutral-500 mt-1">广告费 / 销售额</div>
+            </div>
+            <div className="card-compact text-center">
+              <div className="text-2xl font-bold text-warning-600">{fs.highDiscountOrderShare}%</div>
+              <div className="text-xs text-neutral-500 mt-1">订单伴随 &gt;30% 折扣</div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-800 leading-relaxed">
+            <strong>核心财务规律：</strong>{fe.keyInsight_adLeverage?.evidence}。
+            {fe.keyInsight_adLeverage?.implication}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+            {fa.P3_cartRecovery && (
+              <div className="card-compact border-l-4 border-orange-400">
+                <div className="text-[10px] font-bold text-orange-600 uppercase mb-1">P3 · 弃单追回 = 每月可追回</div>
+                <div className="text-xl font-bold text-orange-700">${fa.P3_cartRecovery.monthlyPotentialUsd?.toLocaleString()}</div>
+                <div className="text-xs text-neutral-500 mt-1">{fa.P3_cartRecovery.calculation}</div>
+              </div>
+            )}
+            {fa.P5_adAttributionLoss && (
+              <div className="card-compact border-l-4 border-purple-400">
+                <div className="text-[10px] font-bold text-purple-600 uppercase mb-1">P5 · 广告归因丢失 = 每月浪费</div>
+                <div className="text-xl font-bold text-purple-700">${fa.P5_adAttributionLoss.monthlyLossUsd?.toLocaleString()}</div>
+                <div className="text-xs text-neutral-500 mt-1">{fa.P5_adAttributionLoss.keyEvidence?.slice(0, 60)}</div>
+              </div>
+            )}
+            {fa.P6_euAdEfficiency && (
+              <div className="card-compact border-l-4 border-blue-400">
+                <div className="text-[10px] font-bold text-blue-600 uppercase mb-1">P7 · EU广告效率优势 = 月节省潜力</div>
+                <div className="text-xl font-bold text-blue-700">${fa.P6_euAdEfficiency.potentialMonthlySavingUsd?.toLocaleString()}</div>
+                <div className="text-xs text-neutral-500 mt-1">US广告率{fa.P6_euAdEfficiency.usAdRate}% vs EU {fa.P6_euAdEfficiency.euAvgAdRate}%</div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       <section className="mb-10">
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">
           问题优先级 · 按可估算损失排序

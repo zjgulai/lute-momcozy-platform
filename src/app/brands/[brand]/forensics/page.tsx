@@ -17,6 +17,7 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
   const g6 = gaps.G6_review_ecosystem ?? {};
   const g5 = gaps.G5_inventory ?? {};
   const g7cs = g7.collectedSignals ?? {};
+  const fa = data?.financialEvidence?.financialArguments ?? {};
 
   const attackRows = (sec.attackSurfacePriority ?? []).map((item: any) => [
     <Badge grade={item.rank === "P0" ? "F" : item.rank === "P1" ? "D" : "C"} size="sm">{item.rank}</Badge>,
@@ -69,7 +70,43 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
         ))}
       </div>
 
-      {/* 关键数字 */}
+      {(fa.P5_adAttributionLoss || fa.P6_euAdEfficiency) && (
+        <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+          <div className="text-[10px] font-bold text-yellow-700 uppercase tracking-widest mb-2">
+            📊 财务实证 · 技术问题的真实成本
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {fa.P5_adAttributionLoss && (
+              <div>
+                <div className="text-xs font-semibold text-neutral-800 mb-1">
+                  P5/P6 · 广告归因丢失（3P失败 92次）
+                </div>
+                <div className="text-lg font-bold text-danger-600">
+                  ${fa.P5_adAttributionLoss.monthlyLossUsd?.toLocaleString()}<span className="text-xs font-normal text-neutral-500">/月</span>
+                </div>
+                <div className="text-xs text-neutral-600 mt-0.5">
+                  月均广告费 ${fa.P5_adAttributionLoss.monthlyAdSpend?.toLocaleString()} × {(fa.P5_adAttributionLoss.estimatedLossRate * 100).toFixed(0)}% 归因丢失（保守估计）
+                </div>
+              </div>
+            )}
+            {fa.P6_euAdEfficiency && (
+              <div>
+                <div className="text-xs font-semibold text-neutral-800 mb-1">
+                  P7 · 若美国广告率降至EU水平（月均节省）
+                </div>
+                <div className="text-lg font-bold text-blue-600">
+                  ${fa.P6_euAdEfficiency.potentialMonthlySavingUsd?.toLocaleString()}<span className="text-xs font-normal text-neutral-500">/月</span>
+                </div>
+                <div className="text-xs text-neutral-600 mt-0.5">
+                  US广告率{fa.P6_euAdEfficiency.usAdRate}% → EU {fa.P6_euAdEfficiency.euAvgAdRate}%（差距{fa.P6_euAdEfficiency.adRateGap}pp）
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="text-[10px] text-yellow-700 mt-2 italic">{data?.financialEvidence?.caveat}</div>
+        </div>
+      )}
+
       <section className="mb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard label="3P 失败最高" value={formatNumber(ext.maxThirdPartyFailures)} sub="PDP watchlist max" variant="danger" />
