@@ -17,6 +17,8 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
   const g11 = gaps.G11_seo_architecture ?? {};
   const g6 = gaps.G6_review_ecosystem ?? {};
   const g5 = gaps.G5_inventory ?? {};
+  const g7 = gaps.G7_checkout_business ?? {};
+  const g7cs = g7.collectedSignals ?? {};
 
   const attackRows = (sec.attackSurfacePriority ?? []).map((item: any) => [
     <Badge grade={item.rank === "P0" ? "F" : item.rank === "P1" ? "D" : "C"} size="sm">{item.rank}</Badge>,
@@ -124,6 +126,50 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+          G7 结账链路 · <Badge status="collected" size="sm" />
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <MetricCard
+            label="快捷支付"
+            value="0 / 3"
+            sub="Shop Pay / Apple Pay / Google Pay 匿名态未检测到"
+            variant="warn"
+          />
+          <MetricCard
+            label="Klarna / Afterpay"
+            value="✅ 已集成"
+            sub="先买后付，高 AOV 促成"
+            variant="success"
+          />
+          <MetricCard
+            label="HSA/FSA / 保险"
+            value="✅ 已集成"
+            sub="母婴品类核心渠道"
+            variant="success"
+          />
+          <MetricCard
+            label="表单字段数"
+            value={String(g7cs.formFieldCount ?? "—")}
+            sub={`运费早期可见: ${g7cs.shippingCostEarlyVisible ? "✅" : "❌"}`}
+          />
+        </div>
+        {(g7.keyFindings ?? []).length > 0 && (
+          <ul className="space-y-1">
+            {(g7.keyFindings as string[]).map((f: string, i: number) => (
+              <li key={i} className="text-xs text-neutral-600 flex gap-2">
+                <span className="text-neutral-400">•</span>
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="text-xs text-neutral-400 mt-2">
+          ⚠️ Shop Pay / Apple Pay / Google Pay 在匿名空购物车状态未检测到，需 owner storage state 复采确认
+        </p>
       </section>
 
       {/* 诊断 Backlog */}

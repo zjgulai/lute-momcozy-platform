@@ -10,6 +10,8 @@ export default async function CompetitorsPage({ params }: { params: Promise<{ br
   const compData = loadLatestCompetitors() as any;
   const competitors = (compData?.competitors ?? []) as any[];
   const compEvidence = data?.competitorEvidence ?? {};
+  const geoLandscape = data?.geoCompetitorLandscape ?? {};
+  const geoComps = (geoLandscape.competitors ?? []) as any[];
 
   const getMetric = (comp: any, route: string, vp: string, key: string) => {
     const page = comp.pages?.find((p: any) => p.routeId === route);
@@ -19,7 +21,6 @@ export default async function CompetitorsPage({ params }: { params: Promise<{ br
 
   const compRows = competitors.map((c: any) => {
     const homepageDesktop3p = getMetric(c, "homepage", "desktop", "thirdPartyFailures");
-    const pdpDesktop3p = getMetric(c, "pdp", "desktop", "thirdPartyFailures");
     const homepageJsKb = getMetric(c, "homepage", "desktop", "jsKb");
     const cartReachable = c.pages?.find((p: any) => p.routeId === "cart")?.status === 200;
     const robotsOk = c.robots?.sitemapCount > 0;
@@ -45,6 +46,27 @@ export default async function CompetitorsPage({ params }: { params: Promise<{ br
     <Badge status="collected" size="sm">✓</Badge>,
   ];
 
+  const freqStars = (f: string) => {
+    if (f === "very_high") return "★★★★★";
+    if (f === "high") return "★★★★";
+    return "★★★";
+  };
+
+  const segLabel = (s: string) => ({ premium: "高端", mid_to_premium: "中高", mid: "中端", budget_to_mid: "中低", budget: "预算" }[s] ?? s);
+
+  const geoRows = geoComps.map((c: any) => [
+    <div>
+      <span className="font-semibold text-sm">{c.label}</span>
+      <div className="text-[10px] text-neutral-400">{c.domain}</div>
+    </div>,
+    <span className="text-sm">{c.category}</span>,
+    <span className="text-sm text-amber-500">{freqStars(c.geoFrequency)}</span>,
+    <Badge grade={c.priceSegment === "premium" || c.priceSegment === "mid_to_premium" ? "A" : c.priceSegment === "mid" ? "B" : "C"} size="sm">
+      {segLabel(c.priceSegment)}
+    </Badge>,
+    <span className="text-xs text-neutral-600">{c.geoRole?.slice(0, 50)}</span>,
+  ]);
+
   return (
     <div className="p-8 max-w-container">
       <div className="mb-8">
@@ -53,7 +75,7 @@ export default async function CompetitorsPage({ params }: { params: Promise<{ br
           竞品不是借口，<br /><span className="text-primary-500">是预算上限。</span>
         </h1>
         <p className="text-neutral-600 text-sm max-w-2xl">
-          {compEvidence.competitorCount ?? 6} 站 · {compEvidence.sampledPageCount ?? 18} 页面 · {compEvidence.viewportSampleCount ?? 24} 视口 · {compEvidence.observedAt ?? "2026-06-18"}
+          {compEvidence.currentCompetitorCount ?? 6} 站已采集 · 计划扩至 {compEvidence.plannedCompetitorCount ?? 10} 站 · {geoLandscape.updatedAt ?? "2026-06-19"} GEO侦查
         </p>
       </div>
 
@@ -67,13 +89,33 @@ export default async function CompetitorsPage({ params }: { params: Promise<{ br
       </section>
 
       <section className="mb-8">
-        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">技术指标横向对比</h2>
+        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+          GEO 竞品格局 · {geoComps.length} 品牌 · AI推荐频次分析
+        </h2>
+        <div className="card-compact mb-3 bg-warning-50 border border-warning-200">
+          <p className="text-xs text-warning-800">
+            <strong>Momcozy GEO 现状</strong>：5/5 问题均被提及，但 <strong>0/5 获得 best overall</strong>。品牌被固化为 budget/value 定位。
+            突破方向：{(geoLandscape.momcozyPositioning?.targetScenarios ?? []).join(" · ")}
+          </p>
+        </div>
+        <Table
+          headers={["品牌", "类别", "GEO 频次", "价格段", "在 AI 推荐中的角色"]}
+          rows={geoRows}
+        />
+        <p className="text-xs text-neutral-400 mt-2">
+          数据来源：Forbes / BabyCenter / Consumer Reports / The Bump / Amazon Best Sellers 2026-06
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">技术指标横向对比（{competitors.length} 个已采集竞品）</h2>
         <Table
           headers={["品牌", "首页 3P 失败", "首页 JS", "Cart 可达", "Robots/Sitemap"]}
           rows={[momcozyRow, ...compRows]}
         />
         <p className="text-xs text-neutral-400 mt-2">
-          * Momcozy 数据来自 session-2026-06-17；竞品来自 competitor-recollect-2026-06-18。首轮样本，不可作为最终分值化对标。
+          * Momcozy 数据来自 session-2026-06-17；竞品来自 {compEvidence.latestSnapshot ?? "competitor-recollect-2026-06-18"}。
+          eufy/Freemie/Medela/BEABA 4个新竞品采集进行中。
         </p>
       </section>
 
@@ -101,11 +143,11 @@ export default async function CompetitorsPage({ params }: { params: Promise<{ br
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">竞品执行记录</h2>
         <div className="card-compact bg-neutral-50">
           <div className="text-xs text-neutral-600 space-y-1">
-            <div>✅ 竞品 PDP 可达: {compEvidence.reachablePdpCount ?? 6}/{compEvidence.competitorCount ?? 6}</div>
-            <div>✅ Cart 可达: {compEvidence.reachableCartCount ?? 5}/{compEvidence.competitorCount ?? 6}（Elvie cart 404）</div>
-            <div>✅ robots.txt OK: {compEvidence.robotsOkCount ?? 5}/{compEvidence.competitorCount ?? 6}</div>
-            <div>✅ 有 Sitemap: {compEvidence.robotsWithSitemapCount ?? 5}/{compEvidence.competitorCount ?? 6}</div>
-            <div>⚠️ 竞品上限后 多次复采 + owner表 + checkout状态 补齐才可恢复分值化对标</div>
+            <div>✅ 当前已采集: {compEvidence.currentCompetitorCount ?? 6} 个竞品</div>
+            <div>⏳ 计划扩充: 新增 eufy / Freemie / Medela / BEABA（下一轮采集）</div>
+            <div>✅ 竞品 PDP 可达: {compEvidence.reachablePdpCount ?? 6}/{compEvidence.currentCompetitorCount ?? 6}</div>
+            <div>✅ Cart 可达: {compEvidence.reachableCartCount ?? 5}/{compEvidence.currentCompetitorCount ?? 6}</div>
+            <div>⚠️ 技术对标需多轮复采后才可做分值化结论</div>
           </div>
         </div>
       </section>

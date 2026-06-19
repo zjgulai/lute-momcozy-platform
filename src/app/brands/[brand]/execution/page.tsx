@@ -4,117 +4,109 @@ import { Badge } from "@/components/ui/Badge";
 export default async function ExecutionPage({ params }: { params: Promise<{ brand: string }> }) {
   await params;
   const data = loadPublicCrossAudit() as any;
-  const playbookCards = (data?.legacyRecovery?.playbookCards ?? []) as any[];
-  const roadmap = (data?.legacyRecovery?.roadmap ?? []) as any[];
 
-  const p0Cards = playbookCards.filter((c: any) => c.priority === "P0" || c.id?.includes("P0"));
-  const p1Cards = playbookCards.filter((c: any) => c.priority === "P1" || c.id?.includes("P1"));
-  const restCards = playbookCards.filter((c: any) =>
-    !c.priority?.includes("P0") && !c.id?.includes("P0") &&
-    !c.priority?.includes("P1") && !c.id?.includes("P1")
-  );
+  const executionOrders = (data?.decisionArchitecture?.executionOrders ?? []) as any[];
+  const hardConclusions = (data?.decisionArchitecture?.hardConclusions ?? []) as any[];
+  const approvedCount = hardConclusions.filter((c: any) => !String(c.title ?? "").startsWith("不批准")).length;
+  const frozenCount = hardConclusions.length - approvedCount;
 
-  const renderCard = (card: any) => (
-    <div key={card.id ?? card.title} className="card overflow-hidden p-0">
-      <div className="bg-neutral-900 text-white px-5 py-4">
-        <div className="flex items-center gap-2 mb-1">
-          {card.id && <span className="text-xs font-mono text-neutral-400">{card.id}</span>}
-          {card.priority && (
-            <Badge grade={card.priority === "P0" ? "F" : card.priority === "P1" ? "D" : "C"} size="sm">
-              {card.priority}
-            </Badge>
-          )}
-          {card.category && <span className="text-xs text-neutral-500">{card.category}</span>}
-        </div>
-        <h3 className="text-sm font-semibold leading-tight">{card.title}</h3>
-        {card.why && <p className="text-xs text-neutral-300 mt-1 leading-relaxed">{card.why.slice(0, 120)}</p>}
-      </div>
-      <div className="px-5 py-4 space-y-3">
-        {card.steps && (
-          <div>
-            <div className="text-xs font-semibold text-neutral-500 uppercase mb-2">执行步骤</div>
-            <ol className="space-y-1 list-decimal list-inside">
-              {(card.steps as string[]).map((s, i) => (
-                <li key={i} className="text-xs text-neutral-600">{s.slice(0, 80)}</li>
-              ))}
-            </ol>
-          </div>
-        )}
-        {card.gate && (
-          <div className="pt-2 border-t border-neutral-100">
-            <div className="text-xs font-semibold text-primary-500 mb-1">验收门禁</div>
-            <p className="text-xs text-neutral-600">{card.gate.slice(0, 100)}</p>
-          </div>
-        )}
-        {card.estimatedEffort && (
-          <div className="text-xs text-neutral-400">⏱ {card.estimatedEffort}</div>
-        )}
-        {card.owner && (
-          <div className="text-xs text-neutral-400">👤 {card.owner}</div>
-        )}
-      </div>
-    </div>
-  );
+  const windowBadgeClass = (w: string) => {
+    if (w?.includes("48") || w?.includes("小时")) return "bg-red-50 text-red-600 border border-red-200";
+    if (w?.includes("3 天") || w?.includes("3天")) return "bg-orange-50 text-orange-700 border border-orange-200";
+    if (w?.includes("1 周") || w?.includes("7 天")) return "bg-blue-50 text-blue-600 border border-blue-200";
+    return "bg-neutral-100 text-neutral-600 border border-neutral-200";
+  };
 
   return (
     <div className="p-8 max-w-container">
       <div className="mb-8">
         <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">IX · 执行战单</div>
         <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight leading-tight mb-3">
-          每项修复，<br /><span className="text-primary-500">都有 owner 和验收门禁。</span>
+          批准 {approvedCount}，冻结 {frozenCount}，<br />
+          <span className="text-primary-500">推进 {executionOrders.length} 条战单。</span>
         </h1>
         <p className="text-neutral-600 text-sm">
-          {playbookCards.length} 张执行卡 · P0 立即执行 · P1 本周内 · 每卡含验收门禁
+          每条战单绑定负责人、时间窗口和验收门禁 · 完成后必须通过复采验证
         </p>
       </div>
 
-      {p0Cards.length > 0 && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Badge grade="F" size="sm">P0</Badge>
-            <h2 className="text-sm font-semibold text-neutral-700">立即执行（{p0Cards.length} 张）</h2>
+      <section className="mb-8">
+        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">硬结论矩阵</h2>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="card-compact text-center">
+            <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
+            <div className="text-xs text-neutral-500 mt-1">批准结论</div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {p0Cards.map(renderCard)}
+          <div className="card-compact text-center">
+            <div className="text-2xl font-bold text-orange-500">{frozenCount}</div>
+            <div className="text-xs text-neutral-500 mt-1">冻结结论</div>
           </div>
-        </section>
-      )}
-
-      {p1Cards.length > 0 && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Badge grade="D" size="sm">P1</Badge>
-            <h2 className="text-sm font-semibold text-neutral-700">本周内（{p1Cards.length} 张）</h2>
+          <div className="card-compact text-center">
+            <div className="text-2xl font-bold text-primary-600">{executionOrders.length}</div>
+            <div className="text-xs text-neutral-500 mt-1">执行战单</div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {p1Cards.map(renderCard)}
-          </div>
-        </section>
-      )}
-
-      {restCards.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">其他执行卡（{restCards.length} 张）</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {restCards.map(renderCard)}
-          </div>
-        </section>
-      )}
-
-      {roadmap.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">4 阶段路线图</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {roadmap.map((phase: any, i: number) => (
-              <div key={i} className="card-compact">
-                <div className="text-xs font-bold text-primary-500 mb-1">{phase.phase}</div>
-                <div className="text-sm font-semibold text-neutral-800 mb-2">{phase.title}</div>
-                <p className="text-xs text-neutral-600 leading-relaxed">{phase.focus?.slice(0, 80)}</p>
+        </div>
+        <div className="space-y-2">
+          {hardConclusions.map((c: any, i: number) => {
+            const isFreeze = String(c.title ?? "").startsWith("不批准");
+            return (
+              <div
+                key={i}
+                className={`flex items-start gap-3 p-3 rounded-lg border text-xs ${
+                  isFreeze ? "bg-orange-50 border-orange-200" : "bg-green-50 border-green-200"
+                }`}
+              >
+                <span className="text-base">{isFreeze ? "❄️" : "✅"}</span>
+                <div>
+                  <span className="font-semibold text-neutral-800">{c.title}</span>
+                  {c.reason && <p className="text-neutral-600 mt-0.5">{c.reason.slice(0, 100)}</p>}
+                </div>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">
+          战单明细（{executionOrders.length} 条）
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {executionOrders.map((order: any, i: number) => (
+            <div key={i} className="card overflow-hidden p-0">
+              <div className="bg-neutral-900 text-white px-5 py-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${windowBadgeClass(order.window)}`}>
+                    {order.window}
+                  </span>
+                  {order.owner && (
+                    <span className="text-[10px] text-neutral-400 truncate">{order.owner.slice(0, 25)}</span>
+                  )}
+                </div>
+                <h3 className="text-sm font-semibold leading-tight">{order.action}</h3>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {(order.steps ?? []).length > 0 && (
+                  <div>
+                    <div className="text-xs font-semibold text-neutral-500 uppercase mb-2">执行步骤</div>
+                    <ol className="space-y-1 list-decimal list-inside">
+                      {(order.steps as string[]).map((s: string, si: number) => (
+                        <li key={si} className="text-xs text-neutral-600">{s.slice(0, 90)}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                {order.gate && (
+                  <div className="pt-2 border-t border-neutral-100">
+                    <div className="text-xs font-semibold text-primary-500 mb-1">验收门禁</div>
+                    <p className="text-xs text-neutral-600">{order.gate.slice(0, 120)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
