@@ -37,12 +37,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: platform-out-${{ github.sha }}
           path: out/
-      - name: Deploy to Tencent Cloud
+      - name: Ensure deploy directories
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -50,6 +51,16 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             mkdir -p /opt/momcozy-platform/html
+            mkdir -p /opt/ai-video/deploy/lighthouse
+      - name: Upload nginx config
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "ops/nginx/momcozy-platform.conf"
+          target: "/opt/ai-video/deploy/lighthouse/"
+          strip_components: 2
       - name: Upload files to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -69,5 +80,5 @@ jobs:
             mv /opt/momcozy-platform/html /opt/momcozy-platform/html-old 2>/dev/null || true
             mv /opt/momcozy-platform/html-new /opt/momcozy-platform/html
             rm -rf /opt/momcozy-platform/html-old
-            docker exec ai_video_nginx nginx -s reload 2>/dev/null || true
+            docker exec ai_video_nginx nginx -t 2>&1 && docker exec ai_video_nginx nginx -s reload || echo "nginx reload skipped - test failed"
             echo "Deploy complete: $(date)"
