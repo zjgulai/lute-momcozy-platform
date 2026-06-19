@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --test tests/platform.test.mjs",
+    "test:data": "node --test tests/platform.test.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

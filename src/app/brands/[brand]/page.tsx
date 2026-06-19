@@ -1,6 +1,6 @@
 import { loadPublicCrossAudit, loadLatestSession } from "@/lib/data/loader";
 import { Badge } from "@/components/ui/Badge";
-import { formatDate, formatPercent, formatMs, formatKb } from "@/lib/utils/format";
+import { formatDate } from "@/lib/utils/format";
 
 const LAYER_COLOR: Record<string, string> = {
   "经营层 · 漏斗后端": "bg-red-50 border-red-200 text-red-800",
