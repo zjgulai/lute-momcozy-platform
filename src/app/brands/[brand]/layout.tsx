@@ -1,6 +1,10 @@
 import { Sidebar } from "@/components/layout/Sidebar";
-import { getBrand } from "@/lib/data/brands";
+import { getBrand, BRANDS } from "@/lib/data/brands";
 import { notFound } from "next/navigation";
+
+export function generateStaticParams() {
+  return BRANDS.map((brand) => ({ brand: brand.id }));
+}
 
 export default async function BrandLayout({
   children,
