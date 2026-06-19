@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  repository_dispatch:
+    types: [audit-data-updated]
 
 permissions:
   contents: read
@@ -28,6 +30,22 @@ jobs:
           cp -r lute-momcozy-audit/src/_data/. src/data/
           echo "Data files copied:"
           ls src/data/
+      - name: Validate copied data
+        run: |
+          test -f src/data/public-cross-audit.json || { echo "FATAL: public-cross-audit.json missing"; exit 1; }
+          test -d src/data/sessions || { echo "FATAL: sessions/ directory missing"; exit 1; }
+          test -d src/data/competitors || { echo "FATAL: competitors/ directory missing"; exit 1; }
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('src/data/public-cross-audit.json','utf8'));
+            if (!d.diagnosticNarrative) throw new Error('Missing diagnosticNarrative');
+            if (!d.metricDictionary) throw new Error('Missing metricDictionary');
+            if (!d.diagnosticGaps360) throw new Error('Missing diagnosticGaps360');
+            const sessions = require('fs').readdirSync('src/data/sessions').filter(f=>f.endsWith('.json'));
+            if (!sessions.length) throw new Error('No session files found');
+            console.log('Data validation passed:', Object.keys(d).length, 'top-level keys,', sessions.length, 'sessions');
+          "
+      - name: Run data integrity tests
+        run: npm test
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

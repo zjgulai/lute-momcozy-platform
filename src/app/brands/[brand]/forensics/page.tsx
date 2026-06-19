@@ -11,13 +11,11 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
   const sec = data?.securityAudit ?? {};
   const seo = data?.seoTechnical ?? {};
   const gaps = data?.diagnosticGaps360?.gaps ?? {};
-  const backlog = (data?.legacyRecovery?.diagnosticBacklog ?? []) as any[];
-  const playbookCards = (data?.legacyRecovery?.playbookCards ?? []) as any[];
+  const g7 = gaps.G7_checkout_business ?? {};
   const g9 = gaps.G9_pdp_content_depth ?? {};
   const g11 = gaps.G11_seo_architecture ?? {};
   const g6 = gaps.G6_review_ecosystem ?? {};
   const g5 = gaps.G5_inventory ?? {};
-  const g7 = gaps.G7_checkout_business ?? {};
   const g7cs = g7.collectedSignals ?? {};
 
   const attackRows = (sec.attackSurfacePriority ?? []).map((item: any) => [
@@ -26,9 +24,6 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
     <span className="text-xs text-neutral-600">{item.evidence?.slice(0, 80)}</span>,
     <span className="text-xs text-neutral-700">{item.recommendation?.slice(0, 80)}</span>,
   ]);
-
-  const backlogP0 = backlog.filter((b: any) => b.priority === "P0");
-  const backlogP1 = backlog.filter((b: any) => b.priority === "P1");
 
   const dn = data?.diagnosticNarrative ?? {};
   const p1 = (dn.problems ?? []).find((p: any) => p.id === "P1");
@@ -203,21 +198,31 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
         </p>
       </section>
 
-      {/* 诊断 Backlog */}
-      <section>
-        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">诊断 Backlog · P0/P1</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {[...backlogP0, ...backlogP1].slice(0, 10).map((item: any, i) => (
-            <div key={i} className="card-compact flex gap-3">
-              <Badge grade={item.priority === "P0" ? "F" : "D"} size="sm" className="mt-0.5 shrink-0">{item.priority}</Badge>
-              <div>
-                <div className="text-sm font-medium text-neutral-800">{item.item}</div>
-                <div className="text-xs text-neutral-500 mt-0.5">{item.evidence?.slice(0, 80)}</div>
+      {p6 && (
+        <section>
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">
+            P6 技术负担 · 竞品对标 · {p6.competitorBenchmark ? "10竞品数据" : ""}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            {(p6.competitorBenchmark ? [
+              { label: "3P 失败超标", momcozy: "92次", competitor: "23次 (eufy)", ratio: "4.0×" },
+              { label: "DOM 节点超标", momcozy: "11,742", competitor: "6,966 (eufy PDP)", ratio: "1.7×" },
+              { label: "Medela 基准", momcozy: "2,212KB JS", competitor: "176KB", ratio: "12.6×" },
+            ] : []).map((row, i) => (
+              <div key={i} className="card-compact border border-danger-200 bg-danger-50">
+                <div className="text-[10px] font-bold text-danger-600 uppercase tracking-widest mb-1">{row.label} {row.ratio}</div>
+                <div className="text-sm font-bold text-neutral-900">{row.momcozy}</div>
+                <div className="text-xs text-neutral-500">竞品：{row.competitor}</div>
               </div>
+            ))}
+          </div>
+          {(p6.newInsights ?? []).map((insight: string, i: number) => (
+            <div key={i} className="text-xs text-neutral-600 flex gap-1.5 mb-1">
+              <span className="text-danger-400 shrink-0">▸</span><span>{insight}</span>
             </div>
           ))}
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

@@ -7,8 +7,20 @@ export default async function ExecutionPage({ params }: { params: Promise<{ bran
 
   const executionOrders = (data?.decisionArchitecture?.executionOrders ?? []) as any[];
   const hardConclusions = (data?.decisionArchitecture?.hardConclusions ?? []) as any[];
+  const summary = data?.decisionArchitecture?.executionSummary ?? {};
   const approvedCount = hardConclusions.filter((c: any) => !String(c.title ?? "").startsWith("不批准")).length;
   const frozenCount = hardConclusions.length - approvedCount;
+
+  const statusBadge = (status: string) => {
+    if (status === "done") return "bg-green-100 text-green-700 border border-green-300";
+    if (status === "in_progress") return "bg-blue-100 text-blue-700 border border-blue-300";
+    return "bg-neutral-100 text-neutral-500 border border-neutral-200";
+  };
+  const statusLabel = (status: string) => {
+    if (status === "done") return "✅ 完成";
+    if (status === "in_progress") return "🔄 进行中";
+    return "⏳ 待执行";
+  };
 
   const windowBadgeClass = (w: string) => {
     if (w?.includes("48") || w?.includes("小时")) return "bg-red-50 text-red-600 border border-red-200";
@@ -40,6 +52,9 @@ export default async function ExecutionPage({ params }: { params: Promise<{ bran
           {order.owner && (
             <span className="text-[10px] text-neutral-400 truncate">{order.owner.slice(0, 25)}</span>
           )}
+          <span className={`ml-auto text-[10px] font-semibold px-2 py-0.5 rounded ${statusBadge(order.status ?? "pending")}`}>
+            {statusLabel(order.status ?? "pending")}
+          </span>
         </div>
         <h3 className="text-sm font-semibold leading-tight">{order.action}</h3>
       </div>
@@ -91,6 +106,22 @@ export default async function ExecutionPage({ params }: { params: Promise<{ bran
         <p className="text-neutral-600 text-sm">
           每条战单绑定负责人、时间窗口和验收门禁 · 完成后必须通过复采验证
         </p>
+        {summary.total > 0 && (
+          <div className="flex gap-4 mt-4">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              <span className="text-xs text-neutral-600">完成 {summary.done ?? 0}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              <span className="text-xs text-neutral-600">进行中 {summary.in_progress ?? 0}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-neutral-300"></span>
+              <span className="text-xs text-neutral-600">待执行 {summary.pending ?? executionOrders.length}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <section className="mb-8">
