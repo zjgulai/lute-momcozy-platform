@@ -70,6 +70,42 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
         </div>
       )}
 
+      <div className="mb-8 rounded-xl border-2 border-orange-400 bg-orange-50 overflow-hidden">
+        <div className="px-5 py-3 bg-orange-400 flex items-center gap-2">
+          <span className="text-white text-sm font-bold">⚡ Owner 现在可以做的 2 件事（解锁 P5 全部数字）</span>
+        </div>
+        <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <div className="text-xs font-bold text-orange-800 uppercase tracking-widest mb-2">
+              任务 1：FB Pixel 去重（5 分钟）
+            </div>
+            <p className="text-xs text-orange-900 mb-2">
+              当前首页有 2 个不同 Pixel ID 同时触发，每笔订单被计算为 2 笔，广告 ROAS 虚高约 2x。
+            </p>
+            <ol className="text-xs text-orange-800 space-y-1 list-decimal list-inside">
+              <li>Shopify Admin → Online Store → Preferences</li>
+              <li>找到 Facebook Pixel 区域，记下所有 Pixel ID</li>
+              <li>确认哪个是当前有效的广告账户 Pixel，删除另一个</li>
+              <li>同时检查 theme.liquid 是否有硬编码的重复 Pixel</li>
+            </ol>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-orange-800 uppercase tracking-widest mb-2">
+              任务 2：分渠道 CVR 导出（30 分钟）
+            </div>
+            <p className="text-xs text-orange-900 mb-2">
+              当前 CVR 2.4% 混淆了付费和自然流量，自然流量真实转化率未知。这是 C7 的核心修复。
+            </p>
+            <ol className="text-xs text-orange-800 space-y-1 list-decimal list-inside">
+              <li>Shopify Admin → Analytics → Reports → Online Store Conversion Rate</li>
+              <li>右上角 Breakdown → Traffic Source → 截图 Paid / Organic / Direct CVR</li>
+              <li>再次 Breakdown → Device type → 截图 Desktop / Mobile CVR</li>
+              <li>把数字发给 AI，立即更新诊断叙事</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
 
       <section className="mb-8">
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">核心 KPI · 当前 vs 历史</h2>
