@@ -1,26 +1,125 @@
 @import "tailwindcss";
 
+@theme {
+  --color-neutral-0:   #ffffff;
+  --color-neutral-50:  #fafafa;
+  --color-neutral-100: #f3f3f3;
+  --color-neutral-200: #e8e8e8;
+  --color-neutral-300: #d9d9d9;
+  --color-neutral-400: #bfbfbf;
+  --color-neutral-600: #787887;
+  --color-neutral-700: #666666;
+  --color-neutral-800: #3c3c44;
+  --color-neutral-900: #1a1a1a;
+
+  --color-primary-50:  #eef2ff;
+  --color-primary-500: #5079d9;
+  --color-primary-600: #3f5fb5;
+  --color-primary-700: #2d4699;
+
+  --color-success-100: #d1fae5;
+  --color-success-500: #10b981;
+  --color-success-700: #047857;
+
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-700: #b45309;
+
+  --color-danger-100:  #fee2e2;
+  --color-danger-500:  #ef4444;
+  --color-danger-700:  #b91c1c;
+
+  --color-info-100:    #cffafe;
+  --color-info-500:    #06b6d4;
+  --color-info-700:    #0e7490;
+
+  --font-size-xs:   11px;
+  --font-size-sm:   13px;
+  --font-size-base: 14px;
+  --font-size-lg:   16px;
+  --font-size-xl:   18px;
+  --font-size-2xl:  24px;
+  --font-size-3xl:  30px;
+  --font-size-4xl:  36px;
+  --font-size-5xl:  48px;
+  --font-size-6xl:  60px;
+
+  --border-radius-sm:   4px;
+  --border-radius-md:   6px;
+  --border-radius-lg:   8px;
+  --border-radius-xl:   12px;
+  --border-radius-pill: 9999px;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
+  --shadow-focus: 0 0 0 3px rgba(80,121,217,0.15);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg: #ffffff;
+  --color-bg-subtle: #fafafa;
+  --color-bg-muted: #f3f3f3;
+  --color-border: #e8e8e8;
+  --color-border-strong: #d9d9d9;
+  --color-text-primary: #3c3c44;
+  --color-text-secondary: #787887;
+  --color-primary: #5079d9;
+  --sidebar-width: 240px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-strong); }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.card-compact {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
+
+.table-base { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-base th {
+  text-align: left; font-size: 11px; font-weight: 600;
+  color: #787887; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 10px 16px; background: #f3f3f3; border-bottom: 1px solid var(--color-border);
+}
+.table-base td { padding: 10px 16px; border-bottom: 1px solid var(--color-border); }
+.table-base tr:last-child td { border-bottom: 0; }
+.table-base tr:hover td { background: #fafafa; }
+
+.metric-number {
+  font-family: var(--font-mono);
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.02em; color: #1a1a1a;
+}
+.metric-label {
+  font-size: 10px; font-weight: 600; color: #787887;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.max-w-container { max-width: 1280px; }
