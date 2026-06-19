@@ -15,8 +15,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      sha: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,11 +24,13 @@ jobs:
       - run: npm ci
       - name: Build static export
         run: npm run build
+      - name: Pack output for upload
+        run: tar -czf platform-out.tar.gz -C out .
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: platform-out-${{ github.sha }}
-          path: out/
+          path: platform-out.tar.gz
           retention-days: 3
 
   deploy:
@@ -38,55 +38,55 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEPLOY_ROOT: ${{ secrets.DEPLOY_ROOT }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
     steps:
       - uses: actions/checkout@v4
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: platform-out-${{ github.sha }}
-          path: out/
-      - name: Ensure deploy directories
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: DEPLOY_ROOT
-          script: |
-            mkdir -p "${DEPLOY_ROOT}/html"
-            mkdir -p /opt/ai-video/deploy/lighthouse
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          timeout 60 ssh-keyscan -T 30 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
       - name: Upload nginx config
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "ops/nginx/momcozy-platform.conf"
-          target: "/opt/ai-video/deploy/lighthouse/"
-          strip_components: 2
-      - name: Upload files to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "out/"
-          target: "/tmp/momcozy-platform-new"
-          strip_components: 1
-      - name: Atomic swap and reload nginx
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: DEPLOY_ROOT
-          script: |
-            LIVE="${DEPLOY_ROOT}/html"
-            BACKUP="${DEPLOY_ROOT}/platform-backup-$(date +%Y%m%d%H%M%S)"
-            mkdir -p "${BACKUP}"
-            cp -a "${LIVE}/." "${BACKUP}/" 2>/dev/null || true
-            rsync -a --delete /tmp/momcozy-platform-new/ "${LIVE}/"
-            rm -rf /tmp/momcozy-platform-new
-            docker exec ai_video_nginx nginx -t 2>&1 && docker exec ai_video_nginx nginx -s reload || echo "nginx reload skipped"
-            find "${DEPLOY_ROOT}" -maxdepth 1 -name "platform-backup-*" -type d | sort | head -n -3 | xargs rm -rf
-            echo "Deploy complete: $(date) -> ${LIVE}"
+        run: |
+          scp -i ~/.ssh/deploy_key -o ConnectTimeout=60 \
+            ops/nginx/momcozy-platform.conf \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/ai-video/deploy/lighthouse/momcozy-platform.conf"
+      - name: Upload and deploy
+        run: |
+          scp -i ~/.ssh/deploy_key -o ConnectTimeout=60 -o ServerAliveInterval=10 \
+            platform-out.tar.gz \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/platform-out.tar.gz"
+          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=60 \
+            -o ServerAliveInterval=10 -o ServerAliveCountMax=6 \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "bash -s -- '${DEPLOY_ROOT}'" <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT=$1
+          LIVE="${ROOT}/html"
+          TMP="/tmp/platform-stage-$$"
+          BACKUP="${ROOT}/platform-backup-$(date +%Y%m%d%H%M%S)"
+          mkdir -p "$TMP"
+          tar -xzf /tmp/platform-out.tar.gz -C "$TMP"
+          mkdir -p "$BACKUP"
+          cp -a "${LIVE}/." "${BACKUP}/" 2>/dev/null || true
+          rsync -a --delete "${TMP}/" "${LIVE}/"
+          rm -rf "$TMP" /tmp/platform-out.tar.gz
+          find "${ROOT}" -maxdepth 1 -name "platform-backup-*" -type d | sort | head -n -3 | xargs rm -rf 2>/dev/null || true
+          docker exec ai_video_nginx nginx -t 2>&1 && docker exec ai_video_nginx nginx -s reload || echo "nginx reload skipped"
+          echo "Deploy complete: $(date) -> ${LIVE}"
+          REMOTE
+      - name: Smoke test
+        run: |
+          sleep 5
+          STATUS=$(curl -sk -o /dev/null -w '%{http_code}' "https://shopify.lute-tlz-dddd.top/brands/momcozy")
+          echo "Smoke test: /brands/momcozy -> HTTP ${STATUS}"
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Smoke test returned ${STATUS}, may need nginx config update on server"
+          fi
