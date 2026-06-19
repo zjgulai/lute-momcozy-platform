@@ -8,7 +8,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ bra
   const data = loadPublicCrossAudit() as any;
   const bhSessions = data?.diagnosticGaps360?.bhSessions;
 
-  const sessionsByConf = (conf: string) => sessions.filter(s => s?.confidence === conf).length;
+  const lcpNote = data?.lcpMethodologyNote ?? {};
 
   return (
     <div className="p-8 max-w-container">
@@ -17,6 +17,24 @@ export default async function CollectionPage({ params }: { params: Promise<{ bra
         <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight leading-tight mb-3">
           三层采集引擎，<br /><span className="text-primary-500">持续监控360。</span>
         </h1>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div className="text-xs font-bold text-amber-700 uppercase tracking-widest mb-2">
+          ⚠️ 置信度说明：当前所有 Session 均为 low
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-amber-800">
+          <div>
+            <strong>根因：</strong>{lcpNote.rootCause ?? "Momcozy 首页 hero 图片使用 CSS background 或 CDN 懒加载，Playwright lab 环境内 LCP Performance Entry 始终未触发（lcp_unobserved_in_timeout）。"}
+          </div>
+          <div>
+            <strong>已修复：</strong>{lcpNote.fix ?? "collect.mjs LCP 等待从 25s 延长至 40s，并前置 networkidle（12s）"}
+            <br />
+            <strong>预期：</strong>{lcpNote.expectedOutcome ?? "下次月度采集验证，部分路由可能获得 LCP 值，置信度从 low 升至 medium"}
+            <br />
+            <strong>根本修复：</strong>{lcpNote.caveat ?? "若 hero 图片为 CSS background，需修改 Momcozy 主题代码才能根本解决"}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
@@ -46,6 +64,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ bra
                 <th>Session</th>
                 <th>采集日期</th>
                 <th>置信度</th>
+                <th>LCP</th>
                 <th>路由数</th>
                 <th>方法版本</th>
               </tr>
@@ -60,11 +79,17 @@ export default async function CollectionPage({ params }: { params: Promise<{ bra
                       status={s?.confidence === "high" ? "pass" : s?.confidence === "medium" ? "warn" : "pending"}
                       size="sm"
                     >
-                      {s?.confidence}
+                      {s?.confidence ?? "low"}
                     </Badge>
                   </td>
+                  <td className="text-xs">
+                    {s?.metrics?.lcp != null
+                      ? <span className="text-success-700 font-mono">{s.metrics.lcp}s</span>
+                      : <span className="text-neutral-400">未观测</span>
+                    }
+                  </td>
                   <td className="text-sm">{s?.routes?.length ?? "—"}</td>
-                  <td className="text-xs text-neutral-500 font-mono">{s?.methodologyVersion?.slice(0, 30)}</td>
+                  <td className="text-xs text-neutral-500 font-mono">{s?.methodologyVersion?.slice(0, 28)}</td>
                 </tr>
               ))}
             </tbody>

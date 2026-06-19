@@ -17,6 +17,69 @@ export default async function ExecutionPage({ params }: { params: Promise<{ bran
     return "bg-neutral-100 text-neutral-600 border border-neutral-200";
   };
 
+  const sprintNow = executionOrders.filter((o: any) =>
+    o.window?.includes("48") || o.window?.includes("小时") || o.window?.includes("3 天") || o.window?.includes("3天") || o.window?.includes("1 周") || o.window?.includes("7 天")
+  );
+  const sprintNext = executionOrders.filter((o: any) =>
+    o.window?.includes("2 周") || o.window?.includes("14 天")
+  );
+  const sprintLater = executionOrders.filter((o: any) =>
+    o.window?.includes("30 天") || o.window?.includes("1 个月")
+  );
+  const sprintOther = executionOrders.filter((o: any) =>
+    !sprintNow.includes(o) && !sprintNext.includes(o) && !sprintLater.includes(o)
+  );
+
+  const OrderCard = ({ order }: { order: any }) => (
+    <div className="card overflow-hidden p-0">
+      <div className="bg-neutral-900 text-white px-5 py-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${windowBadgeClass(order.window)}`}>
+            {order.window}
+          </span>
+          {order.owner && (
+            <span className="text-[10px] text-neutral-400 truncate">{order.owner.slice(0, 25)}</span>
+          )}
+        </div>
+        <h3 className="text-sm font-semibold leading-tight">{order.action}</h3>
+      </div>
+      <div className="px-5 py-4 space-y-3">
+        {(order.steps ?? []).length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-neutral-500 uppercase mb-2">执行步骤</div>
+            <ol className="space-y-1 list-decimal list-inside">
+              {(order.steps as string[]).map((s: string, si: number) => (
+                <li key={si} className="text-xs text-neutral-600">{s.slice(0, 90)}</li>
+              ))}
+            </ol>
+          </div>
+        )}
+        {order.gate && (
+          <div className="pt-2 border-t border-neutral-100">
+            <div className="text-xs font-semibold text-primary-500 mb-1">验收门禁</div>
+            <p className="text-xs text-neutral-600">{order.gate.slice(0, 120)}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const SprintGroup = ({ title, dot, orders }: { title: string; dot: string; orders: any[] }) => (
+    orders.length > 0 ? (
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <span className={`w-2 h-2 rounded-full ${dot} shrink-0`}></span>
+          <span className="text-xs font-bold uppercase tracking-widest text-neutral-600">
+            {title} ({orders.length} 条)
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {orders.map((order: any, i: number) => <OrderCard key={i} order={order} />)}
+        </div>
+      </div>
+    ) : null
+  );
+
   return (
     <div className="p-8 max-w-container">
       <div className="mb-8">
@@ -69,43 +132,12 @@ export default async function ExecutionPage({ params }: { params: Promise<{ bran
 
       <section>
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">
-          战单明细（{executionOrders.length} 条）
+          战单明细 · Sprint 分组（{executionOrders.length} 条）
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {executionOrders.map((order: any, i: number) => (
-            <div key={i} className="card overflow-hidden p-0">
-              <div className="bg-neutral-900 text-white px-5 py-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${windowBadgeClass(order.window)}`}>
-                    {order.window}
-                  </span>
-                  {order.owner && (
-                    <span className="text-[10px] text-neutral-400 truncate">{order.owner.slice(0, 25)}</span>
-                  )}
-                </div>
-                <h3 className="text-sm font-semibold leading-tight">{order.action}</h3>
-              </div>
-              <div className="px-5 py-4 space-y-3">
-                {(order.steps ?? []).length > 0 && (
-                  <div>
-                    <div className="text-xs font-semibold text-neutral-500 uppercase mb-2">执行步骤</div>
-                    <ol className="space-y-1 list-decimal list-inside">
-                      {(order.steps as string[]).map((s: string, si: number) => (
-                        <li key={si} className="text-xs text-neutral-600">{s.slice(0, 90)}</li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-                {order.gate && (
-                  <div className="pt-2 border-t border-neutral-100">
-                    <div className="text-xs font-semibold text-primary-500 mb-1">验收门禁</div>
-                    <p className="text-xs text-neutral-600">{order.gate.slice(0, 120)}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <SprintGroup title="Sprint Now · 立即执行" dot="bg-red-500" orders={sprintNow} />
+        <SprintGroup title="Sprint Next · 本周内" dot="bg-blue-500" orders={sprintNext} />
+        <SprintGroup title="Sprint Later · 本月内" dot="bg-neutral-400" orders={sprintLater} />
+        <SprintGroup title="其他战单" dot="bg-neutral-300" orders={sprintOther} />
       </section>
     </div>
   );
