@@ -14,11 +14,14 @@ export default async function DiagnosticPage({ params }: { params: Promise<{ bra
     D: { label: "Layer D · 社交商务层", color: "border-primary-500", keys: ["G8_social_commerce"] },
   };
 
+  const compData = data?.competitorEvidence ?? {};
+  const compCount = compData.currentCompetitorCount ?? 6;
+
   const existing = [
     { id: "D1", label: "前端性能指标", status: "collected" as const, note: "FCP/TTFB/LCP/DOM/JS/3P失败" },
     { id: "D2", label: "第三方脚本治理", status: "collected" as const, note: "kill-list + owner制 + 失败预算" },
     { id: "D3", label: "内部经营漏斗", status: "warn" as const, note: "有口径风险（C7）" },
-    { id: "D4", label: "竞品技术对标", status: "collected" as const, note: "6站×性能×双视口" },
+    { id: "D4", label: "竞品技术对标", status: "collected" as const, note: `${compCount}站×性能×双视口` },
     { id: "D5", label: "SEO 技术底座", status: "collected" as const, note: "Schema/canonical/meta" },
     { id: "D6", label: "GEO/AI 可见度", status: "collected" as const, note: "Perplexity 5问实测" },
     { id: "D7", label: "安全被动扫描", status: "collected" as const, note: "CSP/SRI/双Pixel/myshopify" },
@@ -100,8 +103,12 @@ export default async function DiagnosticPage({ params }: { params: Promise<{ bra
                   )}
                   {!isCollected && gap.actionItems?.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-neutral-100">
-                      <div className="text-[10px] font-semibold text-neutral-400 uppercase mb-1">下一步</div>
-                      <div className="text-xs text-neutral-500">{gap.actionItems[0]}</div>
+                      <div className="text-[10px] font-semibold text-warning-600 uppercase mb-1.5">操作步骤 (Owner)</div>
+                      <ol className="space-y-0.5 list-decimal list-inside">
+                        {(gap.actionItems as string[]).map((a: string, i: number) => (
+                          <li key={i} className="text-xs text-neutral-600">{a}</li>
+                        ))}
+                      </ol>
                     </div>
                   )}
                 </div>
