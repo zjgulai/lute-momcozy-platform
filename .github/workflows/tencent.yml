@@ -89,8 +89,8 @@ jobs:
       - name: Smoke test
         run: |
           sleep 5
-          STATUS=$(curl -sk -o /dev/null -w '%{http_code}' "https://shopify.lute-tlz-dddd.top/brands/momcozy")
+          STATUS=$(node -e "fetch('https://shopify.lute-tlz-dddd.top/brands/momcozy',{redirect:'follow',signal:AbortSignal.timeout(8000)}).then(r=>process.stdout.write(String(r.status))).catch(()=>process.stdout.write('ERR'))")
           echo "Smoke test: /brands/momcozy -> HTTP ${STATUS}"
           if [ "$STATUS" != "200" ]; then
-            echo "::warning::Smoke test returned ${STATUS}, may need nginx config update on server"
+            echo "::warning::Smoke test returned ${STATUS}"
           fi
