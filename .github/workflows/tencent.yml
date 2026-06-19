@@ -60,23 +60,27 @@ jobs:
             "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/ai-video/deploy/lighthouse/momcozy-platform.conf"
       - name: Upload and deploy
         run: |
+          DEPLOY_ROOT_CLEAN="${DEPLOY_ROOT//[[:space:]]/}"
           scp -i ~/.ssh/deploy_key -o ConnectTimeout=60 -o ServerAliveInterval=10 \
             platform-out.tar.gz \
             "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/platform-out.tar.gz"
           ssh -i ~/.ssh/deploy_key -o ConnectTimeout=60 \
             -o ServerAliveInterval=10 -o ServerAliveCountMax=6 \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "bash -s -- '${DEPLOY_ROOT}'" <<'REMOTE'
+            "bash -s -- '${DEPLOY_ROOT_CLEAN}'" <<'REMOTE'
           set -Eeuo pipefail
           ROOT=$1
           LIVE="${ROOT}/html"
           TMP="/tmp/platform-stage-$$"
           BACKUP="${ROOT}/platform-backup-$(date +%Y%m%d%H%M%S)"
+          echo ">>> LIVE=${LIVE}"
           mkdir -p "$TMP"
           tar -xzf /tmp/platform-out.tar.gz -C "$TMP"
+          echo ">>> tar done, files: $(ls $TMP | head -5)"
           mkdir -p "$BACKUP"
           cp -a "${LIVE}/." "${BACKUP}/" 2>/dev/null || true
           rsync -a --delete "${TMP}/" "${LIVE}/"
+          echo ">>> rsync done, live index: $(ls ${LIVE}/brands 2>/dev/null || echo 'no brands dir')"
           rm -rf "$TMP" /tmp/platform-out.tar.gz
           find "${ROOT}" -maxdepth 1 -name "platform-backup-*" -type d | sort | head -n -3 | xargs rm -rf 2>/dev/null || true
           docker exec ai_video_nginx nginx -t 2>&1 && docker exec ai_video_nginx nginx -s reload || echo "nginx reload skipped"
