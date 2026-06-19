@@ -25,14 +25,35 @@ export default async function CrossAuditPage({ params }: { params: Promise<{ bra
     <span className="text-xs font-medium">{q.topRecommendation?.slice(0, 30)}</span>,
   ]);
 
+  const p7 = (data?.diagnosticNarrative?.problems ?? []).find((p: any) => p.id === "P7");
+
   return (
     <div className="p-8 max-w-container">
       <div className="mb-8">
-        <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">V · 决策矩阵</div>
+        <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">V · 决策矩阵 · P7</div>
         <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight leading-tight mb-3">
-          历史报告为基线，<br /><span className="text-primary-500">当前只留行动。</span>
+          SEO/GEO 双重盲区——<br /><span className="text-danger-500">品牌增长天花板正在关闭。</span>
         </h1>
+        <p className="text-neutral-600 text-sm max-w-2xl">
+          本页解答 P7（SEO 架构缺陷 + GEO 叙事主权缺失）及所有已确认的硬结论与执行战单。
+          0/5 AI 推荐获得 best overall；nursing-bra 品类 130 个分面 URL 正在浪费爬虫预算。
+        </p>
       </div>
+
+      {p7 && (
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
+          <div className="px-4 py-3 bg-blue-100 border-b border-blue-200">
+            <span className="text-xs font-bold text-blue-700 uppercase tracking-widest">P7 证据摘要</span>
+          </div>
+          <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-1.5">
+            {(p7.evidence ?? []).map((e: string, i: number) => (
+              <div key={i} className="text-xs text-blue-800 flex gap-1.5">
+                <span className="text-blue-400 shrink-0">▸</span><span>{e}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 关键结论 */}
       <section className="mb-8">

@@ -1,147 +1,258 @@
 import { loadPublicCrossAudit, loadLatestSession } from "@/lib/data/loader";
-import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/Badge";
-import { formatPercent, formatMs, formatKb, formatNumber, formatDate, relativeDate } from "@/lib/utils/format";
+import { formatDate, formatPercent, formatMs, formatKb } from "@/lib/utils/format";
+
+const LAYER_COLOR: Record<string, string> = {
+  "经营层 · 漏斗后端": "bg-red-50 border-red-200 text-red-800",
+  "经营层 · 漏斗前端": "bg-red-50 border-red-200 text-red-800",
+  "经营层 · 营销追回": "bg-orange-50 border-orange-200 text-orange-800",
+  "执行层 · 数据基础": "bg-purple-50 border-purple-200 text-purple-800",
+  "执行层 · PDP 内容": "bg-amber-50 border-amber-200 text-amber-800",
+  "执行层 · 技术性能": "bg-yellow-50 border-yellow-200 text-yellow-800",
+  "战略层 · 可见度": "bg-blue-50 border-blue-200 text-blue-800",
+  "战略层 · 系统安全": "bg-neutral-50 border-neutral-300 text-neutral-700",
+};
 
 export default async function OverviewPage({
   params,
 }: {
   params: Promise<{ brand: string }>;
 }) {
-  const { brand: brandId } = await params;
+  await params;
   const data = loadPublicCrossAudit() as any;
   const session = loadLatestSession() as any;
 
+  const dn = data?.diagnosticNarrative ?? {};
+  const scqa = dn.scqa ?? {};
+  const problems: any[] = dn.problems ?? [];
+  const ranking: any[] = dn.lossRanking ?? [];
+  const reliability = dn.dataReliabilitySummary ?? {};
   const ext = data?.external ?? {};
   const ops = data?.currentOperations ?? {};
-  const hist = data?.historicalOperations ?? {};
 
-  const conclusions = (data?.conclusions ?? []) as any[];
-  const gaps = data?.diagnosticGaps360?.gaps ?? {};
+  const fmtUsd = (v: number | undefined | null) =>
+    v != null ? `$${v.toLocaleString()}` : null;
 
   return (
     <div className="p-8 max-w-container">
-
-      <div className="mb-8">
+      <div className="mb-10">
         <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">
-          I · 总览 · {formatDate(data?.generatedAt)}
+          I · 诊断总览 · {formatDate(data?.generatedAt)}
         </div>
-        <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight leading-tight mb-3">
-          真实经营数据回归，<br />
-          <span className="text-primary-500">关键风险收敛。</span>
+        <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight leading-tight mb-4">
+          8 个问题正在同时<br />
+          <span className="text-danger-500">侵蚀每一分钱的增量。</span>
         </h1>
-        <p className="text-neutral-600 text-base max-w-2xl">
-          采集-诊断-洞察-优化-执行决策全链路。
-          最新外部采集：<span className="font-medium text-neutral-800">{ext.latestSession}</span>
-          {session && <> · {relativeDate(session.observedAt)}</>}
-        </p>
+        <div className="card-compact mb-3 border-l-4 border-l-neutral-300">
+          <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">现状 Situation</div>
+          <p className="text-sm text-neutral-700 leading-relaxed">{scqa.situation}</p>
+        </div>
+        <div className="card-compact mb-3 border-l-4 border-l-danger-400">
+          <div className="text-[10px] font-bold text-danger-500 uppercase tracking-widest mb-1">问题 Complication</div>
+          <p className="text-sm text-neutral-900 leading-relaxed font-medium">{scqa.complication}</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="card-compact border-l-4 border-l-primary-400">
+            <div className="text-[10px] font-bold text-primary-500 uppercase tracking-widest mb-1">核心问题 Question</div>
+            <p className="text-sm text-neutral-700">{scqa.question}</p>
+          </div>
+          <div className="card-compact border-l-4 border-l-success-500">
+            <div className="text-[10px] font-bold text-success-700 uppercase tracking-widest mb-1">本报告的答案 Answer</div>
+            <p className="text-sm text-neutral-700">{scqa.answer}</p>
+          </div>
+        </div>
       </div>
-
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">经营漏斗（当前 workbook）</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricCard
-            label="整体转化率"
-            value={formatPercent(ops.conversion?.conversionRate)}
-            sub="当前 workbook · 含口径风险"
-            variant="default"
-          />
-          <MetricCard
-            label="加购率"
-            value={formatPercent(ops.conversion?.addToCartRate)}
-            sub="访客→加购"
-          />
-          <MetricCard
-            label="平均订单价值"
-            value={ops.sales?.averageOrderValue ? `$${ops.sales.averageOrderValue.toFixed(0)}` : "—"}
-            sub="AOV · 当前窗口"
-          />
-          <MetricCard
-            label="复购率"
-            value={formatPercent(ops.sales?.repurchaseRate)}
-          sub={`Attach rate: ${formatPercent(ops.sales?.attachRate)}`}
-          />
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">技术病灶（外部采集 · {ext.latestSession}）</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricCard
-            label="首页 TTFB"
-            value={formatMs(ext.homepageTtfbDesktopMs)}
-            sub="桌面端 · 非主因"
-            variant="success"
-          />
-          <MetricCard
-            label="首页 JS 体积"
-            value={formatKb(ext.homepageJsKb)}
-            sub={`PDP 最高: ${formatKb(ext.pdpJsKb)}`}
-            variant="danger"
-          />
-          <MetricCard
-            label="最大 DOM 节点"
-            value={formatNumber(ext.maxDomNodes)}
-            sub="PDP watchlist 最高"
-            variant="danger"
-          />
-          <MetricCard
-            label="LCP 可观测"
-            value={`${ext.lcpObservedSamples ?? 0} / ${ext.lcpTotalSamples ?? 0}`}
-            sub="全路由-视口样本均未观测"
-            variant="warn"
-          />
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <MetricCard
-            label="第三方失败（最高）"
-            value={formatNumber(ext.maxThirdPartyFailures)}
-            sub={`PDP: ${ext.pdpThirdPartyFailures ?? "—"}`}
-            variant="danger"
-          />
-          <MetricCard
-            label="PDP Watchlist"
-            value={`${data?.internal?.pdpWatchlistCount ?? 0} 个`}
-            sub="首轮双视口采集已完成"
-          />
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">关键结论</h2>
-        <div className="space-y-3">
-          {conclusions.map((c: any) => (
-            <div key={c.id} className="card-compact flex gap-4 items-start">
-              <div className="mt-0.5">
-                <Badge grade={c.confidence === "High" ? "A" : c.confidence === "Medium" ? "B" : "C"}>
-                  {c.id}
-                </Badge>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-neutral-900 text-sm mb-0.5">{c.issue}</div>
-                <div className="text-xs text-neutral-600 leading-relaxed">{c.verdict?.slice(0, 120)}…</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section>
+      <section className="mb-10">
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">
-          360 框架状态 · {data?.diagnosticGaps360?.coveredDimensions ?? 9} / {data?.diagnosticGaps360?.totalDimensions ?? 20} 维度覆盖
+          问题优先级 · 按可估算损失排序
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {Object.entries(gaps).map(([key, gap]: [string, any]) => (
-            <div key={key} className="card-compact flex items-center gap-3">
-              <Badge status={gap.status === "collected" ? "collected" : gap.status === "partial" ? "warn" : "pending"} size="sm" />
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-neutral-800 truncate">{gap.label}</div>
-                <div className="text-[10px] text-neutral-500">{key.split("_")[0]}</div>
+        <div className="border border-neutral-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-neutral-50 border-b border-neutral-200">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">问题</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">损失估算（全周期）</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">月化</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide w-24">详情页</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranking.map((item: any, i: number) => {
+                const problem = problems.find((p: any) => p.id === item.id);
+                const pageMap: Record<string, string> = {
+                  forensics: "III · 风险归因",
+                  metrics: "II · 指标口径",
+                  "cross-audit": "V · 决策矩阵",
+                };
+                return (
+                  <tr key={item.id} className={`border-b border-neutral-100 ${i === 0 ? "bg-red-50" : ""}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-neutral-400 w-6">{item.id}</span>
+                        <span className="font-medium text-neutral-900">{item.title}</span>
+                      </div>
+                      {problem && (
+                        <p className="text-xs text-neutral-500 mt-0.5 ml-8">
+                          {problem.layer}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {item.lossUsdEstimate ? (
+                        <span className="font-bold text-danger-600 text-base">
+                          {fmtUsd(item.lossUsdEstimate)}
+                          <span className="text-xs font-normal text-neutral-400 ml-1">假设情景</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-neutral-500 italic">{item.note}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-700">
+                      {item.lossMonthly ? fmtUsd(item.lossMonthly) + "/月" : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {problem?.pageOwner && (
+                        <a
+                          href={`/brands/momcozy/${problem.pageOwner}`}
+                          className="text-xs text-primary-600 hover:underline"
+                        >
+                          {pageMap[problem.pageOwner] ?? problem.pageOwner}
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-neutral-400 mt-2">
+          ⚠ 损失估算均为假设情景，基于行业基准（Shopify 母婴品类 / Klaviyo 弃单基准），需通过 A/B 实验验证后方可作为收益承诺。
+        </p>
+      </section>
+      <section className="mb-10">
+        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">
+          8 个问题完整诊断
+        </h2>
+        <div className="space-y-4">
+          {problems.map((p: any) => {
+            const layerClass = LAYER_COLOR[p.layer] ?? "bg-neutral-50 border-neutral-200 text-neutral-700";
+            return (
+              <div key={p.id} className="border border-neutral-200 rounded-xl overflow-hidden">
+                <div className="px-5 py-4 bg-neutral-900 text-white">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xs font-bold bg-white/10 rounded px-2 py-0.5 mt-0.5 shrink-0">{p.id}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded mb-2 border ${layerClass}`}>
+                        {p.layer}
+                      </div>
+                      <h3 className="text-sm font-semibold leading-snug">{p.title}</h3>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-5 py-4 border-b border-neutral-100 bg-neutral-50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="font-bold text-neutral-400 uppercase tracking-wide">S · </span>
+                      <span className="text-neutral-600">{p.scqa?.s}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-danger-500 uppercase tracking-wide">C · </span>
+                      <span className="text-neutral-800 font-medium">{p.scqa?.c}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-primary-500 uppercase tracking-wide">Q · </span>
+                      <span className="text-neutral-600">{p.scqa?.q}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-success-700 uppercase tracking-wide">A · </span>
+                      <span className="text-neutral-700">{p.scqa?.a}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">证据链</div>
+                    <ul className="space-y-1">
+                      {(p.evidence ?? []).map((e: string, i: number) => (
+                        <li key={i} className="text-xs text-neutral-600 flex gap-1.5">
+                          <span className="text-danger-400 shrink-0 mt-0.5">▸</span>
+                          <span>{e}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">损失估算</div>
+                    {p.lossEstimate ? (
+                      <div className="space-y-1">
+                        {p.lossEstimate.value_usd && (
+                          <div className="text-2xl font-bold text-danger-600">
+                            {fmtUsd(p.lossEstimate.value_usd)}
+                          </div>
+                        )}
+                        {p.lossEstimate.value_usd_low && (
+                          <div className="text-xl font-bold text-danger-600">
+                            {fmtUsd(p.lossEstimate.value_usd_low)} – {fmtUsd(p.lossEstimate.value_usd_high)}
+                          </div>
+                        )}
+                        <p className="text-xs text-neutral-500 leading-relaxed">{p.lossEstimate.scenario}</p>
+                        <p className="text-[10px] text-neutral-400 italic">{p.lossEstimate.confidence}</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-neutral-400 italic">
+                        {p.id === "P5" ? "元问题：污染所有其他决策，无法单独量化" :
+                         p.id === "P6" ? "P1+P2 损失的技术放大器" :
+                         p.id === "P4" ? "P1+P2 的直接根因" :
+                         p.id === "P7" ? "未来增长天花板，难以当期量化" :
+                         "尾部风险，触发时灾难性"}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">立即行动</div>
+                    <ol className="space-y-1 list-decimal list-inside">
+                      {(p.immediateActions ?? []).map((a: string, i: number) => (
+                        <li key={i} className="text-xs text-neutral-600">{a}</li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
+      <section className="mb-8">
+        <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">
+          数据可信度矩阵
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div className="text-xs font-semibold text-success-700 mb-2">✅ 可信数字</div>
+            <div className="space-y-2">
+              {(reliability.reliable ?? []).map((item: any) => (
+                <div key={item.field} className="card-compact bg-success-50 border-success-200">
+                  <div className="font-semibold text-xs text-neutral-800">{item.field}: {item.value}</div>
+                  <div className="text-xs text-neutral-500 mt-0.5">{item.reason}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-danger-600 mb-2">⚠️ 不可信 / 需修正口径</div>
+            <div className="space-y-2">
+              {(reliability.unreliable ?? []).map((item: any) => (
+                <div key={item.field} className="card-compact bg-danger-50 border-danger-200">
+                  <div className="font-semibold text-xs text-neutral-800">{item.field}</div>
+                  <div className="text-xs text-neutral-500 mt-0.5">{item.reason}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }

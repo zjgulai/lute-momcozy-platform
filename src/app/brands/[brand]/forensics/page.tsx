@@ -30,17 +30,48 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
   const backlogP0 = backlog.filter((b: any) => b.priority === "P0");
   const backlogP1 = backlog.filter((b: any) => b.priority === "P1");
 
+  const dn = data?.diagnosticNarrative ?? {};
+  const p1 = (dn.problems ?? []).find((p: any) => p.id === "P1");
+  const p2 = (dn.problems ?? []).find((p: any) => p.id === "P2");
+  const p4 = (dn.problems ?? []).find((p: any) => p.id === "P4");
+  const p6 = (dn.problems ?? []).find((p: any) => p.id === "P6");
+  const p8 = (dn.problems ?? []).find((p: any) => p.id === "P8");
+
   return (
     <div className="p-8 max-w-container">
       <div className="mb-8">
-        <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">III · 风险归因</div>
+        <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">III · 风险归因 · P1 P2 P4 P6 P8</div>
         <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight leading-tight mb-3">
-          归属先行，<br /><span className="text-primary-500">再处理脚本与 PDP。</span>
+          漏斗两端同时失血，<br /><span className="text-danger-500">根因在 PDP 和技术负担。</span>
         </h1>
         <p className="text-neutral-600 text-sm max-w-2xl leading-relaxed">
-          第三方脚本治理 · PDP watchlist · SEO 技术底座 · 安全攻击面 · 内容深度。
-          外部采集：<span className="font-medium text-neutral-800">{ext.latestSession}</span>
+          本页解答 P1（漏斗前端失血）、P2（漏斗后端失血）、P4（PDP 内容阻塞）、
+          P6（技术负担超载）、P8（供应链安全）。5 个问题共享同一根因：
+          用户在看到购买理由之前就已经流失了。
         </p>
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+        {[p2, p1].filter(Boolean).map((p: any) => (
+          <div key={p.id} className="rounded-xl border border-red-200 bg-red-50 overflow-hidden">
+            <div className="px-4 py-2 bg-red-100 border-b border-red-200 flex items-center justify-between">
+              <span className="text-xs font-bold text-red-700">{p.id} · {p.layer}</span>
+              {p.lossEstimate?.value_usd && (
+                <span className="text-sm font-bold text-red-600">${p.lossEstimate.value_usd.toLocaleString()} 机会</span>
+              )}
+            </div>
+            <div className="px-4 py-3">
+              <p className="text-xs font-semibold text-neutral-800 mb-2">{p.scqa?.c}</p>
+              <div className="space-y-1">
+                {(p.evidence ?? []).slice(0, 2).map((e: string, i: number) => (
+                  <div key={i} className="text-xs text-red-700 flex gap-1.5">
+                    <span className="shrink-0">▸</span><span>{e}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* 关键数字 */}

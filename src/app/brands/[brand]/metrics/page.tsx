@@ -35,31 +35,42 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
     { key: "G10_support_quality", icon: "◑", color: "text-neutral-400" },
   ];
 
+  const dn = data?.diagnosticNarrative ?? {};
+  const p3 = (dn.problems ?? []).find((p: any) => p.id === "P3");
+  const p5 = (dn.problems ?? []).find((p: any) => p.id === "P5");
+
   return (
     <div className="p-8 max-w-container">
       <div className="mb-8">
-        <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">II · 指标口径</div>
+        <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">II · 指标口径 · P3 + P5</div>
         <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight leading-tight mb-3">
-          先统一口径，<br /><span className="text-primary-500">再讨论增长。</span>
+          先修数字可信度，<br /><span className="text-danger-500">再讨论转化改善。</span>
         </h1>
         <p className="text-neutral-600 text-sm max-w-2xl leading-relaxed">
-          当前 workbook 可用于判断预算优先级；历史经营可用于恢复基线假设。
-          两者不能直接拼成承诺收益。<strong className="text-neutral-800">自然搜索行为 = 0</strong>，付费流量占比约 45%（C7）。
+          本页解答 P3（弃单追回缺失）和 P5（归因系统失灵）。
+          当前有 5 个数字不可信：CVR / 复购率 / 广告 ROAS / 新客增长率 / 历史对比趋势。
+          弃单追回率 = 0%，每周期约 $14,000–$27,000 机会损失从未被触达。
         </p>
       </div>
 
-      {/* 数据质量告警 */}
-      <div className="mb-6 p-4 rounded-lg border border-warning-500 bg-warning-100 flex gap-3 items-start">
-        <span className="text-warning-500 text-lg mt-0.5">⚠</span>
-        <div className="text-sm">
-          <span className="font-semibold text-warning-700">C7 口径风险：</span>
-          <span className="text-warning-700">
-            内部 workbook CVR 2.4% 很可能大量混入高意图付费流量。在付费/自然渠道 CVR 未分段前，当前漏斗改善不能被解读为自然获客效率提升。
-          </span>
+      {p5 && (
+        <div className="mb-6 rounded-xl border border-purple-200 bg-purple-50 overflow-hidden">
+          <div className="px-4 py-3 bg-purple-100 border-b border-purple-200">
+            <span className="text-xs font-bold text-purple-700 uppercase tracking-widest">P5 · 元问题：{p5.title}</span>
+          </div>
+          <div className="px-4 py-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {(p5.evidence ?? []).map((e: string, i: number) => (
+                <div key={i} className="text-xs text-purple-800 flex gap-1.5">
+                  <span className="text-purple-400 shrink-0">▸</span><span>{e}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* KPI 三栏对比 */}
+
       <section className="mb-8">
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">核心 KPI · 当前 vs 历史</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -112,7 +123,11 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
             if (!gap) return null;
             const isCollected = gap.status === "collected" || gap.status === "partial";
             const steps = (gap.actionItems ?? []).slice(0, 3) as string[];
-            return (
+  const dn = data?.diagnosticNarrative ?? {};
+  const p3 = (dn.problems ?? []).find((p: any) => p.id === "P3");
+  const p5 = (dn.problems ?? []).find((p: any) => p.id === "P5");
+
+  return (
               <div key={key} className="card-compact">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge status={isCollected ? "collected" : "pending"} size="sm" />
