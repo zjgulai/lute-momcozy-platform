@@ -38,6 +38,23 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
   const dn = data?.diagnosticNarrative ?? {};
   const p3 = (dn.problems ?? []).find((p: any) => p.id === "P3");
   const p5 = (dn.problems ?? []).find((p: any) => p.id === "P5");
+  const dict = data?.metricDictionary ?? {};
+  const dictCategories = (dict.categories ?? []) as any[];
+
+  const CAT_COLORS: Record<string, string> = {
+    funnel:    "border-red-300 bg-red-50",
+    sales:     "border-green-300 bg-green-50",
+    traffic:   "border-blue-300 bg-blue-50",
+    tech:      "border-orange-300 bg-orange-50",
+    marketing: "border-purple-300 bg-purple-50",
+  };
+  const CAT_TEXT: Record<string, string> = {
+    funnel:    "text-red-700",
+    sales:     "text-green-700",
+    traffic:   "text-blue-700",
+    tech:      "text-orange-700",
+    marketing: "text-purple-700",
+  };
 
   return (
     <div className="p-8 max-w-container">
@@ -106,6 +123,62 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
         </div>
       </div>
 
+      {dictCategories.length > 0 && (
+        <section className="mb-10">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide">
+              指标字典 · {dictCategories.reduce((s: number, c: any) => s + c.metrics.length, 0)} 个指标 · 5 个维度
+            </h2>
+            <span className="text-xs text-neutral-400">更新于 {dict.version}</span>
+          </div>
+          <p className="text-xs text-neutral-500 mb-5">
+            本报告涉及的所有指标统一定义如下。带有 ⚠️ 标注的为当前存在数据质量风险的指标，带有 ✅ 的为可信指标。
+          </p>
+          <div className="space-y-6">
+            {dictCategories.map((cat: any) => (
+              <div key={cat.id} className={`rounded-xl border overflow-hidden ${CAT_COLORS[cat.id] ?? "border-neutral-200 bg-neutral-50"}`}>
+                <div className="px-5 py-3 border-b border-inherit">
+                  <div className={`text-xs font-bold uppercase tracking-widest ${CAT_TEXT[cat.id] ?? "text-neutral-600"}`}>
+                    {cat.label}
+                  </div>
+                  <p className="text-xs text-neutral-600 mt-0.5">{cat.description}</p>
+                </div>
+                <div className="divide-y divide-white/60">
+                  {(cat.metrics as any[]).map((m: any) => (
+                    <div key={m.id} className="px-5 py-4 bg-white/70">
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-mono text-xs font-bold text-neutral-400 shrink-0">{m.name}</span>
+                          <span className="text-sm font-semibold text-neutral-900">{m.zhName}</span>
+                        </div>
+                        {m.currentValue && (
+                          <span className="text-xs font-mono text-neutral-700 shrink-0 bg-neutral-100 px-2 py-0.5 rounded">
+                            当前 {m.currentValue}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-neutral-700 mb-1.5 leading-relaxed">{m.definition}</p>
+                      <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-neutral-500 mb-2">
+                        <span><span className="font-semibold">计算：</span>{m.formula}</span>
+                        {m.benchmark && <span><span className="font-semibold">基准：</span>{m.benchmark}</span>}
+                      </div>
+                      {m.caveat && (
+                        <div className={`text-xs rounded px-2.5 py-1.5 border leading-relaxed ${
+                          m.caveat.startsWith("✅") ? "bg-green-50 border-green-200 text-green-800" :
+                          m.caveat.startsWith("⚠️") ? "bg-amber-50 border-amber-200 text-amber-800" :
+                          "bg-neutral-50 border-neutral-200 text-neutral-600"
+                        }`}>
+                          {m.caveat}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mb-8">
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">核心 KPI · 当前 vs 历史</h2>
