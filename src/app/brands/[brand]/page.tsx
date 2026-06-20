@@ -83,10 +83,27 @@ export default async function OverviewPage({
           </div>
           <div className="card-compact border-l-4 border-l-success-500">
             <div className="text-[10px] font-bold text-success-700 uppercase tracking-widest mb-1">本报告的答案 Answer</div>
-            <p className="text-sm text-neutral-700">{scqa.answer}</p>
+             <p className="text-sm text-neutral-700">{scqa.answer}</p>
           </div>
         </div>
       </div>
+
+      {(reliability.unreliable ?? []).length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm font-bold text-amber-800">⚠️ 先读这个：{(reliability.unreliable ?? []).length} 个数字不可信，决策前必看</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(reliability.unreliable ?? []).map((item: any) => (
+              <span key={item.field} className="text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300 rounded px-2 py-0.5">
+                ❌ {item.field}
+              </span>
+            ))}
+          </div>
+          <p className="text-[10px] text-amber-700 mt-1.5">详细说明见页面底部数据可信度矩阵 · 修复路径见 P5 归因失灵</p>
+        </div>
+      )}
+
 
       {fs.totalSalesUsd && (
         <section className="mb-10">
@@ -296,22 +313,27 @@ export default async function OverviewPage({
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">
           8 个问题完整诊断
         </h2>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {problems.map((p: any) => {
             const layerClass = LAYER_COLOR[p.layer] ?? "bg-neutral-50 border-neutral-200 text-neutral-700";
+            const isDefaultOpen = p.id === "P2";
             return (
-              <div key={p.id} className="border border-neutral-200 rounded-xl overflow-hidden">
-                <div className="px-5 py-4 bg-neutral-900 text-white">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xs font-bold bg-white/10 rounded px-2 py-0.5 mt-0.5 shrink-0">{p.id}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded mb-2 border ${layerClass}`}>
-                        {p.layer}
-                      </div>
-                      <h3 className="text-sm font-semibold leading-snug">{p.title}</h3>
+              <details key={p.id} className="border border-neutral-200 rounded-xl overflow-hidden group" open={isDefaultOpen}>
+                <summary className="px-5 py-3 bg-neutral-900 text-white cursor-pointer list-none flex items-center gap-3 hover:bg-neutral-800 transition-colors">
+                  <span className="text-xs font-bold bg-white/10 rounded px-2 py-0.5 shrink-0">{p.id}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded mb-1 border ${layerClass}`}>
+                      {p.layer}
                     </div>
+                    <div className="text-sm font-semibold leading-snug">{p.title}</div>
                   </div>
-                </div>
+                  {p.lossEstimate?.value_usd && (
+                    <span className="shrink-0 text-xs font-bold text-green-400">${p.lossEstimate.value_usd.toLocaleString()}</span>
+                  )}
+                  <svg className="w-4 h-4 text-neutral-400 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
                 <div className="px-5 py-4 border-b border-neutral-100 bg-neutral-50">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     <div>
@@ -380,7 +402,7 @@ export default async function OverviewPage({
                     </ol>
                   </div>
                 </div>
-              </div>
+              </details>
             );
           })}
         </div>

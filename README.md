@@ -125,6 +125,22 @@ lute-momcozy-platform/src/data/      ← 构建时复制（gitignored）
 
 ---
 
+
+### B1 自动联动配置（audit 数据更新 → 自动触发 platform 重建）
+
+`lute-momcozy-audit/pages.yml` 已配置 `repository_dispatch`，但需要添加一个 GitHub Personal Access Token：
+
+1. 在 GitHub 生成 PAT：Settings → Developer settings → Personal access tokens → Fine-grained tokens
+   - Repository: `lute-momcozy-platform`
+   - Permissions: `Actions: Write`
+
+2. 在 `lute-momcozy-audit` 仓库添加 Secret：
+   Settings → Secrets → Actions → New secret
+   - Name: `PLATFORM_TRIGGER_TOKEN`
+   - Value: 刚生成的 PAT
+
+配置后，每次 audit 数据推送到 main → platform 自动重建部署，无需手动触发。
+
 ## 已知限制 / 技术债
 
 | 问题 | 状态 | 计划 |

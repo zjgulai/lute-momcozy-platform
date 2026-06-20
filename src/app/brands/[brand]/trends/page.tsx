@@ -54,6 +54,11 @@ export default async function TrendsPage({ params }: { params: Promise<{ brand: 
           <strong>⚠️ 图表数据说明：</strong>
           {" "}{lcpNote.rootCause}
           {" "}3P 失败 / JS / DOM 是当前可信的主趋势指标；已修复采集脚本（{lcpNote.fix}）。
+          {lcpNote.competitorContext && (
+            <div className="mt-2 pt-2 border-t border-amber-200 text-amber-700">
+              <strong>注：</strong>{lcpNote.competitorContext}
+            </div>
+          )}
         </div>
       )}
 

@@ -43,6 +43,8 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
   const dict = data?.metricDictionary ?? {};
   const dictCategories = (dict.categories ?? []) as any[];
   const bs03 = data?.bs03LtvDiagnosis ?? {};
+  const skuAlert = data?.skuAnomalyAlerts?.alerts?.[0] ?? null;
+  const lossSkus = (data?.lossSkuAnalysis?.lossSkus ?? []) as any[];
 
   const CAT_COLORS: Record<string, string> = {
     funnel:    "border-red-300 bg-red-50",
@@ -134,18 +136,18 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
             </h2>
             <span className="text-xs text-neutral-400">更新于 {dict.version}</span>
           </div>
-          <p className="text-xs text-neutral-500 mb-5">
-            本报告涉及的所有指标统一定义如下。带有 ⚠️ 标注的为当前存在数据质量风险的指标，带有 ✅ 的为可信指标。
+          <p className="text-xs text-neutral-500 mb-4">
+            本报告涉及的所有指标统一定义如下。带有 ⚠️ 标注的为当前存在数据质量风险的指标，带有 ✅ 的为可信指标。点击分类标题可展开/收起。
           </p>
-          <div className="space-y-6">
+          <div className="space-y-3">
             {dictCategories.map((cat: any) => (
-              <div key={cat.id} className={`rounded-xl border overflow-hidden ${CAT_COLORS[cat.id] ?? "border-neutral-200 bg-neutral-50"}`}>
-                <div className="px-5 py-3 border-b border-inherit">
+              <details key={cat.id} className={`rounded-xl border overflow-hidden`}>
+                <summary className={`px-5 py-3 cursor-pointer list-none flex items-center justify-between ${CAT_COLORS[cat.id] ?? "border-neutral-200 bg-neutral-50"}`}>
                   <div className={`text-xs font-bold uppercase tracking-widest ${CAT_TEXT[cat.id] ?? "text-neutral-600"}`}>
                     {cat.label}
                   </div>
                   <p className="text-xs text-neutral-600 mt-0.5">{cat.description}</p>
-                </div>
+                </summary>
                 <div className="divide-y divide-white/60">
                   {(cat.metrics as any[]).map((m: any) => (
                     <div key={m.id} className="px-5 py-4 bg-white/70">
@@ -177,7 +179,7 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
                     </div>
                   ))}
                 </div>
-              </div>
+              </details>
             ))}
           </div>
         </section>
@@ -353,6 +355,82 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
               ⚠️ 缺失数据：{bs03.missingData}
             </div>
           </div>
+        </section>
+      )}
+
+      {skuAlert && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            SKU 异常告警 · 需立即确认
+          </h2>
+          <div className="rounded-xl border-2 border-danger-400 bg-danger-50 p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0">🚨</span>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-bold text-danger-800">{skuAlert.title}</span>
+                  <span className="text-[10px] bg-danger-200 text-danger-800 font-bold px-2 py-0.5 rounded">{skuAlert.severity}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  {Object.entries(skuAlert.monthlyData ?? {}).map(([month, sales]: [string, any]) => (
+                    <div key={month} className={`text-center rounded p-2 ${sales === 0 ? "bg-danger-200 border border-danger-400" : "bg-white border border-neutral-200"}`}>
+                      <div className="text-[10px] text-neutral-500">{month.slice(4)}</div>
+                      <div className={`text-xs font-bold ${sales === 0 ? "text-danger-700" : "text-neutral-900"}`}>
+                        {sales === 0 ? "⚡ $0" : `$${(sales/1000).toFixed(0)}K`}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs text-danger-800 mb-2">{skuAlert.businessImpact}</div>
+                <div className="bg-white rounded p-2 border border-danger-200">
+                  <div className="text-[10px] font-bold text-danger-700 mb-1">三种假说（需立即确认）</div>
+                  <ol className="space-y-0.5">
+                    {(skuAlert.hypothesis ?? []).map((h: string, i: number) => (
+                      <li key={i} className="text-[10px] text-neutral-700 flex gap-1">
+                        <span className="font-bold text-danger-500 shrink-0">{i+1}.</span><span>{h}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <div className="mt-2 text-[10px] font-bold text-danger-700">
+                  必要行动：{skuAlert.requiredAction}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {lossSkus.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            亏损 SKU 清单 · 合计损失 ${data?.lossSkuAnalysis?.totalLossUsd?.toLocaleString()}（7个月）
+          </h2>
+          <div className="border border-neutral-200 rounded-xl overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-neutral-50 border-b border-neutral-200">
+                  <th className="px-3 py-2 text-left font-semibold text-neutral-500">SKU</th>
+                  <th className="px-3 py-2 text-right font-semibold text-neutral-500">销售额</th>
+                  <th className="px-3 py-2 text-right font-semibold text-neutral-500">毛利率</th>
+                  <th className="px-3 py-2 text-right font-semibold text-neutral-500">亏损额</th>
+                  <th className="px-3 py-2 text-left font-semibold text-neutral-500 hidden md:table-cell">建议</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lossSkus.map((sku: any, i: number) => (
+                  <tr key={i} className="border-b border-neutral-100">
+                    <td className="px-3 py-2 font-medium text-neutral-800">{sku.spu}</td>
+                    <td className="px-3 py-2 text-right font-mono">${sku.salesUsd.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right font-bold text-danger-600">{sku.marginRate}%</td>
+                    <td className="px-3 py-2 text-right font-bold text-danger-700">-${sku.lossUsd.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-neutral-500 hidden md:table-cell">{sku.recommendation.slice(0, 40)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[10px] text-neutral-500 mt-2">{data?.lossSkuAnalysis?.keyInsight?.slice(0, 120)}</p>
         </section>
       )}
     </div>
