@@ -45,7 +45,12 @@ export default async function ExecutionPage({ params }: { params: Promise<{ bran
   const OrderCard = ({ order }: { order: any }) => (
     <div className="card overflow-hidden p-0">
       <div className="bg-neutral-900 text-white px-5 py-4">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {order.problemId && (
+            <span className="text-[10px] font-bold bg-primary-500 text-white px-2 py-0.5 rounded">
+              {order.problemId}
+            </span>
+          )}
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${windowBadgeClass(order.window)}`}>
             {order.window}
           </span>
@@ -57,6 +62,9 @@ export default async function ExecutionPage({ params }: { params: Promise<{ bran
           </span>
         </div>
         <h3 className="text-sm font-semibold leading-tight">{order.action}</h3>
+        {order.expectedImpact && (
+          <p className="text-[10px] text-green-400 mt-1 leading-relaxed">{order.expectedImpact.slice(0, 80)}</p>
+        )}
       </div>
       <div className="px-5 py-4 space-y-3">
         {(order.steps ?? []).length > 0 && (
@@ -64,7 +72,7 @@ export default async function ExecutionPage({ params }: { params: Promise<{ bran
             <div className="text-xs font-semibold text-neutral-500 uppercase mb-2">执行步骤</div>
             <ol className="space-y-1 list-decimal list-inside">
               {(order.steps as string[]).map((s: string, si: number) => (
-                <li key={si} className="text-xs text-neutral-600">{s.slice(0, 90)}</li>
+                <li key={si} className="text-xs text-neutral-600">{s.slice(0, 100)}</li>
               ))}
             </ol>
           </div>

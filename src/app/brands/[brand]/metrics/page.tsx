@@ -42,6 +42,7 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
   const feMonthly = (fe.monthlyTrend ?? []) as any[];
   const dict = data?.metricDictionary ?? {};
   const dictCategories = (dict.categories ?? []) as any[];
+  const bs03 = data?.bs03LtvDiagnosis ?? {};
 
   const CAT_COLORS: Record<string, string> = {
     funnel:    "border-red-300 bg-red-50",
@@ -300,6 +301,54 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
           })}
         </div>
       </section>
+
+      {bs03.title && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            BS03 剃刀+刀片模式 · 独立站最大复购机会
+          </h2>
+          <div className="rounded-xl border border-green-200 bg-green-50 p-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="text-center">
+                <div className="text-xl font-bold text-neutral-900">${(bs03.hostSalesUsd/1000000).toFixed(1)}M</div>
+                <div className="text-[10px] text-neutral-500 mt-0.5">主机7月销售额</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-neutral-900">{bs03.hostUnits?.toLocaleString()}</div>
+                <div className="text-[10px] text-neutral-500 mt-0.5">台 BS03 存量</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-green-700">${bs03.bladeMonthlyPerUnit}</div>
+                <div className="text-[10px] text-neutral-500 mt-0.5">每台月均耗材消费</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-green-700">{bs03.bladeMarginRate}%</div>
+                <div className="text-[10px] text-neutral-500 mt-0.5">洗涤块毛利率</div>
+              </div>
+            </div>
+            <div className="space-y-2 mb-3">
+              {(bs03.potentialInsights ?? []).map((insight: string, i: number) => (
+                <div key={i} className="text-xs text-green-800 flex gap-1.5">
+                  <span className="text-green-500 shrink-0">▸</span><span>{insight}</span>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-green-200">
+              <div className="text-[10px] font-bold text-green-700 uppercase mb-1">立即行动</div>
+              <ol className="space-y-1">
+                {(bs03.actionItems ?? []).map((a: string, i: number) => (
+                  <li key={i} className="text-xs text-neutral-700 flex gap-1.5">
+                    <span className="text-green-500 shrink-0 font-bold">{i+1}.</span><span>{a}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className="mt-2 text-[10px] text-orange-700">
+              ⚠️ 缺失数据：{bs03.missingData}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

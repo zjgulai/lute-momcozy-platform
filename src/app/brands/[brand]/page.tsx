@@ -37,9 +37,30 @@ export default async function OverviewPage({
   const fmtUsd = (v: number | undefined | null) =>
     v != null ? `$${v.toLocaleString()}` : null;
 
+  const roiMatrix = (data?.roiMatrix?.items ?? []) as any[];
+  const causalChain = (data?.problemCausalChain?.rootCauses ?? []) as any[];
+  const bs03 = data?.bs03LtvDiagnosis ?? {};
+
   return (
     <div className="p-8 max-w-container">
-      <div className="mb-10">
+
+      <div className="mb-6 rounded-xl bg-neutral-900 text-white p-5 flex items-start justify-between gap-6">
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">今天就做这一件事</div>
+          <div className="text-base font-bold text-white mb-1">修复 sticky-atc CTA 定位（CSS 1行）→ 确认 Shop Pay 启用</div>
+          <div className="text-xs text-neutral-400 leading-relaxed">
+            当前 Add to Cart 按钮始终在 viewport 外 5px（top=742px, viewport=737px）。1 行 CSS 修复后，
+            每月可多转化约 5,555 笔订单，月均增收估算 <strong className="text-green-400">$86,000</strong>。
+            Shop Pay 同步确认启用（Shopify 官方数据：提升转化 72%）。
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-2xl font-bold text-green-400">30 分钟</div>
+          <div className="text-[10px] text-neutral-500 uppercase">修复时间</div>
+        </div>
+      </div>
+
+      <div className="mb-8">
         <div className="text-xs font-semibold text-primary-500 uppercase tracking-widest mb-2">
           I · 诊断总览 · {formatDate(data?.generatedAt)}
         </div>
@@ -120,6 +141,86 @@ export default async function OverviewPage({
               </div>
             )}
           </div>
+        </section>
+      )}
+
+      {causalChain.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            根因层次 · 为什么有些问题比损失排名更优先
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            {causalChain.map((c: any) => (
+              <div key={c.id} className="card-compact border-l-4 border-primary-400">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-bold bg-primary-100 text-primary-700 px-2 py-0.5 rounded">{c.id}</span>
+                  <span className="text-xs font-semibold text-neutral-700">{c.role}</span>
+                </div>
+                <p className="text-xs text-neutral-600 leading-relaxed">{c.explanation}</p>
+                {c.causes && (
+                  <div className="mt-1 text-[10px] text-danger-600 font-semibold">
+                    → 直接导致: {c.causes.join(", ")}
+                  </div>
+                )}
+                {c.amplifies && (
+                  <div className="mt-1 text-[10px] text-orange-600 font-semibold">
+                    → 放大: {c.amplifies.join(", ")}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="text-xs text-neutral-500 bg-neutral-50 rounded px-3 py-2">
+            📋 <strong>建议修复顺序</strong>：{data?.problemCausalChain?.readingGuide}
+          </div>
+        </section>
+      )}
+
+      {roiMatrix.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            ROI 矩阵 · 修复难度 × 预期月化收益 · 快速决策
+          </h2>
+          <div className="border border-neutral-200 rounded-xl overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-neutral-50 border-b border-neutral-200">
+                  <th className="px-3 py-2 text-left font-semibold text-neutral-500">行动</th>
+                  <th className="px-3 py-2 text-center font-semibold text-neutral-500">难度</th>
+                  <th className="px-3 py-2 text-right font-semibold text-neutral-500">预期月化</th>
+                  <th className="px-3 py-2 text-left font-semibold text-neutral-500 hidden md:table-cell">理由</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roiMatrix.sort((a: any, b: any) => b.roiScore - a.roiScore).map((item: any, i: number) => (
+                  <tr key={i} className={`border-b border-neutral-100 ${i === 0 ? "bg-green-50" : ""}`}>
+                    <td className="px-3 py-2">
+                      <span className="text-[10px] font-bold bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded mr-1">{item.problemId}</span>
+                      <span className="font-medium text-neutral-800">{item.title.slice(0, 40)}</span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                        item.effortLevel === "极低" ? "bg-green-100 text-green-700" :
+                        item.effortLevel === "低" ? "bg-blue-100 text-blue-700" :
+                        "bg-orange-100 text-orange-700"
+                      }`}>
+                        {item.effortLevel} · {item.effortDays}天
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {item.expectedMonthlyUsd ? (
+                        <span className="font-bold text-green-700">${item.expectedMonthlyUsd.toLocaleString()}</span>
+                      ) : (
+                        <span className="text-neutral-400 text-[10px]">长期效果</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-neutral-500 hidden md:table-cell">{item.whyNow?.slice(0, 55)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[10px] text-neutral-400 mt-1">{data?.roiMatrix?.caveat}</p>
         </section>
       )}
 
