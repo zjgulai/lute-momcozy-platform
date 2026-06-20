@@ -18,6 +18,7 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
   const g5 = gaps.G5_inventory ?? {};
   const g7cs = g7.collectedSignals ?? {};
   const fa = data?.financialEvidence?.financialArguments ?? {};
+  const hpDiag = data?.homepageDiagnosis ?? {};
 
   const attackRows = (sec.attackSurfacePriority ?? []).map((item: any) => [
     <Badge grade={item.rank === "P0" ? "F" : item.rank === "P1" ? "D" : "C"} size="sm">{item.rank}</Badge>,
@@ -258,6 +259,39 @@ export default async function ForensicsPage({ params }: { params: Promise<{ bran
               <span className="text-danger-400 shrink-0">▸</span><span>{insight}</span>
             </div>
           ))}
+        </section>
+      )}
+
+      {hpDiag.bounceRate && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            首页诊断 · 跳出率 {(hpDiag.bounceRate * 100).toFixed(1)}%（行业均值 {hpDiag.bounceRateBenchmark}）
+          </h2>
+          <div className="card-compact mb-3 bg-amber-50 border border-amber-200 text-xs text-amber-800">
+            <strong>核心问题</strong>：{hpDiag.bounceRateGap}，平均 PV {hpDiag.avgPv}（目标 4-6 页）。
+            每 100 个访客里有 {Math.round(hpDiag.bounceRate * 100)} 个在看完首页前就离开——漏斗前端 P1 失血的起点。
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            {(hpDiag.hypotheses ?? []).map((h: any) => (
+              <div key={h.id} className={`card-compact ${h.priority === "高" ? "border-l-4 border-danger-400" : h.priority === "中" ? "border-l-4 border-warning-400" : "border-l-4 border-neutral-300"}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">{h.id}</span>
+                  <span className={`text-[10px] font-semibold ${h.priority === "高" ? "text-danger-600" : h.priority === "中" ? "text-warning-700" : "text-neutral-500"}`}>
+                    优先级: {h.priority}
+                  </span>
+                </div>
+                <div className="text-xs font-semibold text-neutral-800 mb-1">{h.title}</div>
+                <div className="text-xs text-neutral-600 mb-2 leading-relaxed">{h.description}</div>
+                <div className="text-[10px] text-neutral-500 border-t border-neutral-100 pt-1">
+                  <strong>修复方向：</strong>{h.fix}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="card-compact bg-neutral-50 text-xs text-neutral-600">
+            <strong>缺失的诊断（需接入 Clarity 后 14 天获取）：</strong>
+            {(hpDiag.missingDiagnosis ?? []).join("；")}
+          </div>
         </section>
       )}
     </div>

@@ -88,6 +88,10 @@ export default async function CompetitorsPage({ params }: { params: Promise<{ br
     <span className="text-xs text-neutral-600">{c.geoRole?.slice(0, 50)}</span>,
   ]);
 
+  const ccb = data?.competitorCommercialBenchmark ?? {};
+  const pricingComps = (ccb.pricingComparison?.competitors ?? []) as any[];
+  const reviewVelocity = (ccb.reviewVelocityComparison?.momcozy ?? []) as any[];
+
   return (
     <div className="p-8 max-w-container">
       <div className="mb-8">
@@ -226,6 +230,80 @@ export default async function CompetitorsPage({ params }: { params: Promise<{ br
                 )}
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {ccb.pricingComparison && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            商业层对比 · 定价策略 + 评论生态 + 折扣策略
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="card-compact">
+              <div className="text-[10px] font-bold text-neutral-500 uppercase mb-2">定价带对比（MSRP）</div>
+              <div className="space-y-1.5">
+                {pricingComps.map((c: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className={`font-medium ${c.brand.includes("Momcozy") ? "text-primary-600" : "text-neutral-700"}`}>
+                      {c.brand}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-neutral-900">${c.msrp}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        c.segment === "高端" ? "bg-purple-100 text-purple-700" :
+                        c.segment === "中高" || c.segment === "中端" ? "bg-blue-100 text-blue-700" :
+                        "bg-neutral-100 text-neutral-600"
+                      }`}>{c.segment}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-[10px] text-amber-700 bg-amber-50 rounded px-2 py-1 leading-relaxed">
+                {ccb.pricingComparison?.keyInsight?.slice(0, 120)}
+              </div>
+            </div>
+
+            <div className="card-compact">
+              <div className="text-[10px] font-bold text-neutral-500 uppercase mb-2">Momcozy 评论生态</div>
+              <div className="space-y-1.5">
+                {reviewVelocity.map((r: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-700 font-medium">{r.sku}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`font-mono font-bold ${r.reviewCount < 100 ? "text-danger-600" : "text-neutral-900"}`}>
+                        {r.reviewCount}条
+                      </span>
+                      <span className="text-neutral-400">{r.rating}★</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-[10px] text-amber-700 bg-amber-50 rounded px-2 py-1 leading-relaxed">
+                {ccb.reviewVelocityComparison?.keyInsight?.slice(0, 100)}
+              </div>
+            </div>
+
+            <div className="card-compact">
+              <div className="text-[10px] font-bold text-neutral-500 uppercase mb-2">折扣策略对比</div>
+              <div className="space-y-2">
+                <div className="bg-danger-50 rounded p-2">
+                  <div className="text-xs font-semibold text-danger-700 mb-0.5">Momcozy</div>
+                  <div className="text-[10px] text-danger-600">{ccb.discountStrategyComparison?.momcozy?.discountRate}</div>
+                  <div className="text-[10px] text-neutral-600 mt-0.5">{ccb.discountStrategyComparison?.momcozy?.strategy}</div>
+                </div>
+                {(ccb.discountStrategyComparison?.competitors ?? []).map((c: any, i: number) => (
+                  <div key={i} className="bg-neutral-50 rounded p-2">
+                    <div className="text-xs font-semibold text-neutral-700 mb-0.5">{c.brand}</div>
+                    <div className="text-[10px] text-neutral-600">{c.strategy}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-[10px] text-blue-700 bg-blue-50 rounded px-2 py-1 leading-relaxed">
+                {ccb.discountStrategyComparison?.keyInsight?.slice(0, 100)}
+              </div>
+            </div>
           </div>
         </section>
       )}

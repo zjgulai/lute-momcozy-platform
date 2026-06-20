@@ -230,15 +230,21 @@ export default async function MetricsPage({ params }: { params: Promise<{ brand:
       <section className="mb-8">
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">核心 KPI · 当前 vs 历史</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <MetricCard label="转化率 CVR" value={formatPercent(ops.conversion?.conversionRate)} sub="当前 workbook · 含口径风险" variant="warn" />
-          <MetricCard label="历史 CVR" value={formatPercent(hist.conversion?.overallCvr)} sub="历史 M1 v2.0 · 不同窗口口径" />
-          <MetricCard label="AOV（当前）" value={`$${Math.round(ops.sales?.averageOrderValue ?? 0)}`} sub="当前窗口" />
+          <div>
+            <MetricCard label="转化率 CVR" value={formatPercent(ops.conversion?.conversionRate)} sub="含口径风险，见 P5" variant="warn" />
+            <div className="mt-1 text-[10px] text-amber-700 bg-amber-50 rounded px-2 py-1">⚠️ C7：付费/自然混淆，真实自然流量 CVR 未知</div>
+          </div>
+          <MetricCard label="历史 CVR" value={formatPercent(hist.conversion?.overallCvr)} sub="历史 M1 · 不同窗口口径" />
+          <MetricCard label="AOV（当前）" value={`$${Math.round(ops.sales?.averageOrderValue ?? 0)}`} sub="当前窗口 · 99%折扣后均价" />
           <MetricCard label="AOV（历史）" value={`$${Math.round(hist.sales?.averageOrderValueUsd ?? 0)}`} sub="历史 M1 · 更高" />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard label="月均收入（历史）" value={`$${((hist.sales?.monthlyRevenueUsd ?? 0) / 1e6).toFixed(1)}M`} sub="历史 M1 · 不可直接承诺" />
-          <MetricCard label="复购率（当前）" value={formatPercent(ops.sales?.repurchaseRate)} sub="当前 workbook" variant="success" />
-          <MetricCard label="跳出率（当前）" value={formatPercent(ops.traffic?.bounceRate)} sub="当前 workbook" />
+          <div>
+            <MetricCard label="复购率（当前）" value={formatPercent(ops.sales?.repurchaseRate)} sub="老客贡献率，非新客复购率" />
+            <div className="mt-1 text-[10px] text-amber-700 bg-amber-50 rounded px-2 py-1">⚠️ 口径：是老客贡献率，窗口不同不可与历史对比</div>
+          </div>
+          <MetricCard label="跳出率（当前）" value={formatPercent(ops.traffic?.bounceRate)} sub="57.9%，行业均值45-55%" variant="warn" />
           <MetricCard label="跳出率（历史）" value={formatPercent(hist.traffic?.bounceRate)} sub="历史 · 更高" variant="success" />
         </div>
       </section>

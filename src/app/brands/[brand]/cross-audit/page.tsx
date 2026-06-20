@@ -14,6 +14,10 @@ export default async function CrossAuditPage({ params }: { params: Promise<{ bra
   const hardConclusions = data?.decisionArchitecture?.hardConclusions ?? [];
   const geo = data?.geoBaseline ?? {};
   const gaps = data?.diagnosticGaps360?.gaps ?? {};
+  const geoMethodology = data?.geoTestingMethodology ?? {};
+  const geoCategories = (geoMethodology.proposedFramework?.categories ?? []) as any[];
+  const geoKPIs = geoMethodology.quarterlySOPTemplate?.targetKPIs ?? {};
+  const geoContentGaps = (geoMethodology.priorityContentGaps ?? []) as any[];
 
   const confBadge = (c: string) => c === "High" ? "A" as const : c === "Medium" ? "B" as const : "C" as const;
 
@@ -130,7 +134,85 @@ export default async function CrossAuditPage({ params }: { params: Promise<{ bra
         </section>
       )}
 
-      {/* 冲突处理 */}
+      {geoCategories.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
+            GEO 测试升级方案 · 从 5题单引擎 → 20题×3引擎标准框架
+          </h2>
+
+          <div className="card-compact mb-4 bg-amber-50 border border-amber-200 text-xs text-amber-800">
+            <strong>当前基线缺陷</strong>：{geoMethodology.currentBaseline?.limitation}。
+            建议升级为 {geoMethodology.proposedFramework?.totalQuestions} 个问题 ×{" "}
+            {geoMethodology.proposedFramework?.enginesRequired?.join("/")} 三引擎测试。
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            {geoCategories.map((cat: any, i: number) => (
+              <div key={i} className="card-compact">
+                <div className="text-[10px] font-bold text-neutral-500 uppercase mb-1">
+                  {cat.type}（{cat.count}题）
+                </div>
+                <div className="space-y-1">
+                  {cat.examples.slice(0, 2).map((ex: string, j: number) => (
+                    <div key={j} className="text-[10px] text-neutral-600 bg-neutral-50 rounded px-1.5 py-1">
+                      {ex.slice(0, 45)}
+                    </div>
+                  ))}
+                  {cat.examples.length > 2 && (
+                    <div className="text-[10px] text-neutral-400">+{cat.examples.length - 2} 更多…</div>
+                  )}
+                </div>
+                <div className="mt-1 text-[10px] text-primary-600">{cat.goal?.slice(0, 50)}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="card-compact">
+              <div className="text-[10px] font-bold text-neutral-500 uppercase mb-2">季度复测目标 KPI</div>
+              <div className="space-y-1">
+                {Object.entries(geoKPIs).map(([key, val]: [string, any]) => (
+                  <div key={key} className="flex justify-between text-xs">
+                    <span className="text-neutral-600">{key.replace(/Target$/, "").replace(/([A-Z])/g, " $1").trim()}</span>
+                    <span className="font-semibold text-primary-700">{String(val)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="card-compact">
+              <div className="text-[10px] font-bold text-neutral-500 uppercase mb-2">优先内容缺口（GEO 叙事主权）</div>
+              <div className="space-y-2">
+                {geoContentGaps.map((gap: any, i: number) => (
+                  <div key={i} className={`rounded p-2 text-[10px] ${
+                    gap.scenario === "保险渠道" ? "bg-red-50 border border-red-200" :
+                    gap.scenario === "职场场景" ? "bg-orange-50 border border-orange-200" :
+                    "bg-blue-50 border border-blue-200"
+                  }`}>
+                    <div className="font-bold mb-0.5">{gap.scenario} — {gap.currentGeoStatus}</div>
+                    <div className="text-neutral-600">{gap.contentNeeded?.slice(0, 80)}</div>
+                    <div className="text-neutral-500 mt-0.5">预计见效：{gap.estimatedTimeToRank}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="card-compact bg-neutral-50">
+            <div className="text-[10px] font-bold text-neutral-500 uppercase mb-1">
+              季度复测 SOP · {geoMethodology.quarterlySOPTemplate?.frequency} · 约{geoMethodology.quarterlySOPTemplate?.estimatedTime}
+            </div>
+            <ol className="space-y-0.5">
+              {(geoMethodology.quarterlySOPTemplate?.steps ?? []).map((s: string, i: number) => (
+                <li key={i} className="text-[10px] text-neutral-600 flex gap-1.5">
+                  <span className="text-primary-500 font-bold shrink-0">{i + 1}.</span><span>{s}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
+
       {contradictions.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">决策冲突处理 ({contradictions.length})</h2>
